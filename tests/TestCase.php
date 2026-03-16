@@ -2,9 +2,9 @@
 
 namespace Aldeebhasan\Inventorix\Tests;
 
+use Aldeebhasan\Inventorix\InventorixServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Aldeebhasan\Inventorix\InventorixServiceProvider;
 
 class TestCase extends Orchestra
 {
