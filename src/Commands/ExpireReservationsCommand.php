@@ -2,7 +2,6 @@
 
 namespace Aldeebhasan\Inventorix\Commands;
 
-use Aldeebhasan\Inventorix\Enums\ReservationStatus;
 use Aldeebhasan\Inventorix\Events\ReservationExpired;
 use Aldeebhasan\Inventorix\Inventorix;
 use Aldeebhasan\Inventorix\Models\Reservation;

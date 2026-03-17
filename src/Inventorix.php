@@ -26,10 +26,9 @@ use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Threshold;
 use Aldeebhasan\Inventorix\Models\Transaction;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -112,7 +111,7 @@ class Inventorix
     public function addStock(Model $stockable, int $quantity, Location|int $location, array $options = []): Stock
     {
         if ($quantity <= 0) {
-            throw new InvalidQuantityException();
+            throw new InvalidQuantityException;
         }
 
         $location = $this->resolveLocation($location);
@@ -152,7 +151,7 @@ class Inventorix
     public function deductStock(Model $stockable, int $quantity, Location|int $location, array $options = []): Stock
     {
         if ($quantity <= 0) {
-            throw new InvalidQuantityException();
+            throw new InvalidQuantityException;
         }
 
         $location = $this->resolveLocation($location);
@@ -200,7 +199,7 @@ class Inventorix
     public function transfer(Model $stockable, int $quantity, Location|int $from, Location|int $to, array $options = []): bool
     {
         if ($quantity <= 0) {
-            throw new InvalidQuantityException();
+            throw new InvalidQuantityException;
         }
 
         $fromLocation = $this->resolveLocation($from);
@@ -330,7 +329,7 @@ class Inventorix
     public function reserve(Model $stockable, int $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
     {
         if ($quantity <= 0) {
-            throw new InvalidQuantityException();
+            throw new InvalidQuantityException;
         }
 
         $location = $this->resolveLocation($location);
@@ -390,12 +389,12 @@ class Inventorix
         if (is_int($reservation)) {
             $reservation = Reservation::find($reservation);
             if (! $reservation) {
-                throw new ReservationNotFoundException();
+                throw new ReservationNotFoundException;
             }
         }
 
         if ($reservation->status !== ReservationStatus::Pending) {
-            throw new ReservationAlreadyFulfilledException();
+            throw new ReservationAlreadyFulfilledException;
         }
 
         return DB::transaction(function () use ($reservation) {
@@ -437,12 +436,12 @@ class Inventorix
         if (is_int($reservation)) {
             $reservation = Reservation::find($reservation);
             if (! $reservation) {
-                throw new ReservationNotFoundException();
+                throw new ReservationNotFoundException;
             }
         }
 
         if ($reservation->status !== ReservationStatus::Pending) {
-            throw new ReservationAlreadyFulfilledException();
+            throw new ReservationAlreadyFulfilledException;
         }
 
         return DB::transaction(function () use ($reservation) {

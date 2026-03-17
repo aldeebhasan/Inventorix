@@ -1,5 +1,11 @@
 <?php
 
+use Aldeebhasan\Inventorix\Models\Location;
+use Aldeebhasan\Inventorix\Models\Movement;
+use Aldeebhasan\Inventorix\Models\Reservation;
+use Aldeebhasan\Inventorix\Models\Stock;
+use Aldeebhasan\Inventorix\Models\Transaction;
+
 // config for Aldeebhasan/Inventorix
 return [
 
@@ -25,11 +31,11 @@ return [
     | Swap any internal model with your own subclass.
     */
     'models' => [
-        'stock' => \Aldeebhasan\Inventorix\Models\Stock::class,
-        'movement' => \Aldeebhasan\Inventorix\Models\Movement::class,
-        'location' => \Aldeebhasan\Inventorix\Models\Location::class,
-        'reservation' => \Aldeebhasan\Inventorix\Models\Reservation::class,
-        'transaction' => \Aldeebhasan\Inventorix\Models\Transaction::class,
+        'stock' => Stock::class,
+        'movement' => Movement::class,
+        'location' => Location::class,
+        'reservation' => Reservation::class,
+        'transaction' => Transaction::class,
     ],
 
     /*

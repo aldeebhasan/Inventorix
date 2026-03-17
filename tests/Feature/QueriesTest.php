@@ -1,8 +1,6 @@
 <?php
 
-use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Models\Location;
-use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Tests\Support\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
