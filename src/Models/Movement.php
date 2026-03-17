@@ -26,9 +26,9 @@ class Movement extends Model
 
     protected $casts = [
         'type' => MovementType::class,
-        'quantity' => 'integer',
-        'before_quantity' => 'integer',
-        'after_quantity' => 'integer',
+        'quantity' => 'decimal:4',
+        'before_quantity' => 'decimal:4',
+        'after_quantity' => 'decimal:4',
     ];
 
     public function getTable(): string

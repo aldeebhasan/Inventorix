@@ -24,8 +24,8 @@ it('setStockThreshold persists threshold', function () {
         ->first();
 
     expect($threshold)->not->toBeNull()
-        ->and($threshold->min_quantity)->toBe(10)
-        ->and($threshold->max_quantity)->toBe(100);
+        ->and($threshold->min_quantity)->toEqual(10)
+        ->and($threshold->max_quantity)->toEqual(100);
 });
 
 it('setStockThreshold persists global threshold (no location)', function () {
@@ -37,7 +37,7 @@ it('setStockThreshold persists global threshold (no location)', function () {
         ->first();
 
     expect($threshold)->not->toBeNull()
-        ->and($threshold->min_quantity)->toBe(5);
+        ->and($threshold->min_quantity)->toEqual(5);
 });
 
 it('LowStockReached event fires when stock drops to min', function () {
@@ -49,7 +49,7 @@ it('LowStockReached event fires when stock drops to min', function () {
 
     Event::assertDispatched(LowStockReached::class, function ($event) {
         return $event->stockable->id === $this->product->id
-            && $event->threshold === 10;
+            && $event->threshold == 10;
     });
 });
 
@@ -71,7 +71,7 @@ it('OverstockReached event fires when stock rises to max', function () {
 
     Event::assertDispatched(OverstockReached::class, function ($event) {
         return $event->stockable->id === $this->product->id
-            && $event->threshold === 50;
+            && $event->threshold == 50;
     });
 });
 

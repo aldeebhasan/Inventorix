@@ -19,7 +19,7 @@ it('stockAt returns correct Stock model', function () {
     $stock = $this->product->stockAt($this->locationA);
 
     expect($stock)->toBeInstanceOf(Stock::class)
-        ->and($stock->quantity)->toBe(50)
+        ->and($stock->quantity)->toEqual(50)
         ->and($stock->location_id)->toBe($this->locationA->id);
 });
 
@@ -33,14 +33,14 @@ it('totalStock sums across locations', function () {
     $this->product->addStock(50, $this->locationA);
     $this->product->addStock(30, $this->locationB);
 
-    expect($this->product->totalStock())->toBe(80);
+    expect($this->product->totalStock())->toEqual(80);
 });
 
 it('availableStock returns quantity minus reserved_quantity', function () {
     $this->product->addStock(100, $this->locationA);
     $this->product->reserve(20, $this->locationA);
 
-    expect($this->product->availableStock($this->locationA))->toBe(80);
+    expect($this->product->availableStock($this->locationA))->toEqual(80);
 });
 
 it('availableStock sums across all locations when no location given', function () {
@@ -48,7 +48,7 @@ it('availableStock sums across all locations when no location given', function (
     $this->product->addStock(50, $this->locationB);
     $this->product->reserve(20, $this->locationA);
 
-    expect($this->product->availableStock())->toBe(130);
+    expect($this->product->availableStock())->toEqual(130);
 });
 
 it('movementHistory filters by type', function () {
@@ -80,8 +80,8 @@ it('stockSummary returns correct structure', function () {
     $summary = $this->product->stockSummary();
 
     expect($summary)->toHaveKeys(['total_quantity', 'reserved_quantity', 'available_quantity', 'locations', 'is_low_stock', 'last_movement_at'])
-        ->and($summary['total_quantity'])->toBe(80)
-        ->and($summary['reserved_quantity'])->toBe(10)
-        ->and($summary['available_quantity'])->toBe(70)
+        ->and($summary['total_quantity'])->toEqual(80)
+        ->and($summary['reserved_quantity'])->toEqual(10)
+        ->and($summary['available_quantity'])->toEqual(70)
         ->and($summary['locations'])->toHaveCount(2);
 });

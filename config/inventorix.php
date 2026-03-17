@@ -21,7 +21,6 @@ return [
         'locations' => 'inventorix_locations',
         'reservations' => 'inventorix_reservations',
         'transactions' => 'inventorix_transactions',
-        'thresholds' => 'inventorix_thresholds',
     ],
 
     /*

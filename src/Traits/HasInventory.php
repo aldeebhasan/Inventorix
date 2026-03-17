@@ -32,27 +32,27 @@ trait HasInventory
             ->where('stockable_type', static::class);
     }
 
-    public function addStock(int $quantity, Location|int $location, array $options = []): Stock
+    public function addStock(int|float $quantity, Location|int $location, array $options = []): Stock
     {
         return app(Inventorix::class)->addStock($this, $quantity, $location, $options);
     }
 
-    public function deductStock(int $quantity, Location|int $location, array $options = []): Stock
+    public function deductStock(int|float $quantity, Location|int $location, array $options = []): Stock
     {
         return app(Inventorix::class)->deductStock($this, $quantity, $location, $options);
     }
 
-    public function transferStock(int $quantity, Location|int $from, Location|int $to, array $options = []): bool
+    public function transferStock(int|float $quantity, Location|int $from, Location|int $to, array $options = []): bool
     {
         return app(Inventorix::class)->transfer($this, $quantity, $from, $to, $options);
     }
 
-    public function adjustStock(int $newQuantity, Location|int $location, array $options = []): Stock
+    public function adjustStock(int|float $newQuantity, Location|int $location, array $options = []): Stock
     {
         return app(Inventorix::class)->adjustStock($this, $newQuantity, $location, $options);
     }
 
-    public function reserve(int $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
+    public function reserve(int|float $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
     {
         return app(Inventorix::class)->reserve($this, $quantity, $location, $reference, $options);
     }
@@ -77,14 +77,14 @@ trait HasInventory
             ->first();
     }
 
-    public function totalStock(): int
+    public function totalStock(): float
     {
-        return (int) Stock::where('stockable_type', static::class)
+        return (float) Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey())
             ->sum('quantity');
     }
 
-    public function availableStock(Location|int|null $location = null): int
+    public function availableStock(Location|int|null $location = null): float
     {
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
@@ -94,10 +94,10 @@ trait HasInventory
             $query->where('location_id', $locationId);
         }
 
-        return (int) $query->get()->sum(fn ($stock) => max(0, $stock->quantity - $stock->reserved_quantity));
+        return (float) $query->get()->sum(fn ($stock) => max(0, $stock->quantity - $stock->reserved_quantity));
     }
 
-    public function reservedStock(Location|int|null $location = null): int
+    public function reservedStock(Location|int|null $location = null): float
     {
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
@@ -107,7 +107,7 @@ trait HasInventory
             $query->where('location_id', $locationId);
         }
 
-        return (int) $query->sum('reserved_quantity');
+        return (float) $query->sum('reserved_quantity');
     }
 
     public function isLowStock(Location|int|null $location = null): bool
@@ -190,12 +190,12 @@ trait HasInventory
             $query->where('location_id', $locationId);
         }
 
-        $totalQuantity = (int) $query->sum('quantity');
+        $totalQuantity = (float) $query->sum('quantity');
 
         return $totalQuantity * $costPrice;
     }
 
-    public function setStockThreshold(int $min, ?int $max = null, Location|int|null $location = null): void
+    public function setStockThreshold(int|float $min, int|float|null $max = null, Location|int|null $location = null): void
     {
         $locationId = null;
         if ($location !== null) {
@@ -215,7 +215,7 @@ trait HasInventory
         );
     }
 
-    public function minStock(Location|int|null $location = null): int
+    public function minStock(Location|int|null $location = null): float
     {
         $locationId = null;
         if ($location !== null) {
@@ -234,10 +234,10 @@ trait HasInventory
             ->orderByRaw('location_id IS NULL')
             ->first();
 
-        return $threshold?->min_quantity ?? 0;
+        return (float) ($threshold?->min_quantity ?? 0);
     }
 
-    public function maxStock(Location|int|null $location = null): ?int
+    public function maxStock(Location|int|null $location = null): ?float
     {
         $locationId = null;
         if ($location !== null) {
@@ -256,7 +256,7 @@ trait HasInventory
             ->orderByRaw('location_id IS NULL')
             ->first();
 
-        return $threshold?->max_quantity;
+        return $threshold?->max_quantity !== null ? (float) $threshold->max_quantity : null;
     }
 
     public function checkThresholds(Location|int|null $location = null): void

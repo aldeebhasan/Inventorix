@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('stockable_type');
             $table->unsignedBigInteger('stockable_id');
             $table->foreignId('location_id')->nullable()->constrained($locationsTable)->nullOnDelete();
-            $table->integer('min_quantity')->default(0);
-            $table->integer('max_quantity')->nullable();
+            $table->decimal('min_quantity', 15, 4)->default(0);
+            $table->decimal('max_quantity', 15, 4)->nullable();
             $table->timestamps();
 
             $table->unique(['stockable_type', 'stockable_id', 'location_id']);

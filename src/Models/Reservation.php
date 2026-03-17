@@ -26,7 +26,7 @@ class Reservation extends Model
     protected $casts = [
         'status' => ReservationStatus::class,
         'expires_at' => 'datetime',
-        'quantity' => 'integer',
+        'quantity' => 'decimal:4',
     ];
 
     public function getTable(): string

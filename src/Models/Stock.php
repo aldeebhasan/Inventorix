@@ -19,8 +19,8 @@ class Stock extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
-        'reserved_quantity' => 'integer',
+        'quantity' => 'decimal:4',
+        'reserved_quantity' => 'decimal:4',
     ];
 
     public function getTable(): string

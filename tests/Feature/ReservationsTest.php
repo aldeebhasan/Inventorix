@@ -21,8 +21,8 @@ it('reserve increases reserved_quantity, not quantity', function () {
 
     $stock = $this->product->stockAt($this->location);
 
-    expect($stock->quantity)->toBe(100)
-        ->and($stock->reserved_quantity)->toBe(30);
+    expect($stock->quantity)->toEqual(100)
+        ->and($stock->reserved_quantity)->toEqual(30);
 });
 
 it('reserve creates a Reservation record with status pending', function () {
@@ -30,7 +30,7 @@ it('reserve creates a Reservation record with status pending', function () {
 
     expect($reservation)->toBeInstanceOf(Reservation::class)
         ->and($reservation->status)->toBe(ReservationStatus::Pending)
-        ->and($reservation->quantity)->toBe(30);
+        ->and($reservation->quantity)->toEqual(30);
 });
 
 it('reserve throws InsufficientStockException when not enough available', function () {
@@ -46,7 +46,7 @@ it('releaseReservation decrements reserved_quantity and sets status released', f
     $stock = $this->product->stockAt($this->location);
     $reservation->refresh();
 
-    expect($stock->reserved_quantity)->toBe(0)
+    expect($stock->reserved_quantity)->toEqual(0)
         ->and($reservation->status)->toBe(ReservationStatus::Released);
 });
 
@@ -57,8 +57,8 @@ it('fulfillReservation decrements both quantity and reserved_quantity, sets stat
     $stock = $this->product->stockAt($this->location);
     $reservation->refresh();
 
-    expect($stock->quantity)->toBe(60)
-        ->and($stock->reserved_quantity)->toBe(0)
+    expect($stock->quantity)->toEqual(60)
+        ->and($stock->reserved_quantity)->toEqual(0)
         ->and($reservation->status)->toBe(ReservationStatus::Fulfilled);
 });
 

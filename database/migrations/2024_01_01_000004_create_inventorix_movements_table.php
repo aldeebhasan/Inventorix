@@ -19,9 +19,9 @@ return new class extends Migration
             $table->foreignId('location_id')->constrained($locationsTable)->cascadeOnDelete();
             $table->foreignId('transaction_id')->nullable()->constrained($transactionsTable)->nullOnDelete();
             $table->string('type');
-            $table->integer('quantity');
-            $table->integer('before_quantity');
-            $table->integer('after_quantity');
+            $table->decimal('quantity', 15, 4);
+            $table->decimal('before_quantity', 15, 4);
+            $table->decimal('after_quantity', 15, 4);
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();

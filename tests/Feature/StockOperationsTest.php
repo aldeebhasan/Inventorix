@@ -21,7 +21,7 @@ beforeEach(function () {
 it('addStock increases quantity correctly', function () {
     $stock = $this->product->addStock(50, $this->location);
 
-    expect($stock->quantity)->toBe(50)
+    expect($stock->quantity)->toEqual(50)
         ->and($stock->location_id)->toBe($this->location->id);
 });
 
@@ -37,7 +37,7 @@ it('deductStock decreases quantity correctly', function () {
     $this->product->addStock(100, $this->location);
     $stock = $this->product->deductStock(30, $this->location);
 
-    expect($stock->quantity)->toBe(70);
+    expect($stock->quantity)->toEqual(70);
 });
 
 it('deductStock throws InsufficientStockException when insufficient', function () {
@@ -49,7 +49,7 @@ it('deductStock allows negative when allow_negative=true', function () {
     $this->product->addStock(10, $this->location);
     $stock = $this->product->deductStock(20, $this->location, ['allow_negative' => true]);
 
-    expect($stock->quantity)->toBe(-10);
+    expect($stock->quantity)->toEqual(-10);
 });
 
 it('transferStock moves stock between locations', function () {
@@ -61,22 +61,22 @@ it('transferStock moves stock between locations', function () {
     $stockA = $this->product->stockAt($this->location);
     $stockB = $this->product->stockAt($locationB);
 
-    expect($stockA->quantity)->toBe(60)
-        ->and($stockB->quantity)->toBe(40);
+    expect($stockA->quantity)->toEqual(60)
+        ->and($stockB->quantity)->toEqual(40);
 });
 
 it('adjustStock sets absolute quantity (increase)', function () {
     $this->product->addStock(10, $this->location);
     $stock = $this->product->adjustStock(50, $this->location);
 
-    expect($stock->quantity)->toBe(50);
+    expect($stock->quantity)->toEqual(50);
 });
 
 it('adjustStock sets absolute quantity (decrease)', function () {
     $this->product->addStock(100, $this->location);
     $stock = $this->product->adjustStock(30, $this->location);
 
-    expect($stock->quantity)->toBe(30);
+    expect($stock->quantity)->toEqual(30);
 });
 
 it('addStock creates a Movement record of correct type', function () {
@@ -89,7 +89,7 @@ it('addStock creates a Movement record of correct type', function () {
 
     expect($movement)->not->toBeNull()
         ->and($movement->type)->toBe(MovementType::Add)
-        ->and($movement->quantity)->toBe(25);
+        ->and($movement->quantity)->toEqual(25);
 });
 
 it('bulk operation groups movements in same Transaction', function () {
@@ -115,8 +115,8 @@ it('movements have correct before/after quantities', function () {
         ->orderBy('id')
         ->get();
 
-    expect($movements[0]->before_quantity)->toBe(0)
-        ->and($movements[0]->after_quantity)->toBe(100)
-        ->and($movements[1]->before_quantity)->toBe(100)
-        ->and($movements[1]->after_quantity)->toBe(70);
+    expect($movements[0]->before_quantity)->toEqual(0)
+        ->and($movements[0]->after_quantity)->toEqual(100)
+        ->and($movements[1]->before_quantity)->toEqual(100)
+        ->and($movements[1]->after_quantity)->toEqual(70);
 });

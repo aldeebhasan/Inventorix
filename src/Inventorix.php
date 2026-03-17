@@ -108,7 +108,7 @@ class Inventorix
         return Movement::create($data);
     }
 
-    public function addStock(Model $stockable, int $quantity, Location|int $location, array $options = []): Stock
+    public function addStock(Model $stockable, int|float $quantity, Location|int $location, array $options = []): Stock
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
@@ -148,7 +148,7 @@ class Inventorix
         });
     }
 
-    public function deductStock(Model $stockable, int $quantity, Location|int $location, array $options = []): Stock
+    public function deductStock(Model $stockable, int|float $quantity, Location|int $location, array $options = []): Stock
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
@@ -196,7 +196,7 @@ class Inventorix
         });
     }
 
-    public function transfer(Model $stockable, int $quantity, Location|int $from, Location|int $to, array $options = []): bool
+    public function transfer(Model $stockable, int|float $quantity, Location|int $from, Location|int $to, array $options = []): bool
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
@@ -271,7 +271,7 @@ class Inventorix
         return true;
     }
 
-    public function adjustStock(Model $stockable, int $newQuantity, Location|int $location, array $options = []): Stock
+    public function adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, array $options = []): Stock
     {
         $location = $this->resolveLocation($location);
 
@@ -326,7 +326,7 @@ class Inventorix
         });
     }
 
-    public function reserve(Model $stockable, int $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
+    public function reserve(Model $stockable, int|float $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
