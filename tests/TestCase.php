@@ -4,6 +4,8 @@ namespace Aldeebhasan\Inventorix\Tests;
 
 use Aldeebhasan\Inventorix\InventorixServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
@@ -24,14 +26,20 @@ class TestCase extends Orchestra
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    public function getEnvironmentSetUp($app): void
     {
         config()->set('database.default', 'testing');
+    }
 
-        /*
-         foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/../database/migrations') as $migration) {
-            (include $migration->getRealPath())->up();
-         }
-         */
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->decimal('cost_price', 10, 2)->default(0);
+            $table->timestamps();
+        });
     }
 }
