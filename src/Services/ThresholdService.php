@@ -11,20 +11,9 @@ use Aldeebhasan\Inventorix\Support\ThresholdCache;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 
-class ThresholdService implements ThresholdServiceInterface
+class ThresholdService extends BaseService implements ThresholdServiceInterface
 {
     public function __construct(private readonly Dispatcher $events) {}
-
-    private function shouldDispatch(string $eventShortName): bool
-    {
-        if (! config('inventorix.events.enabled', true)) {
-            return false;
-        }
-
-        $disabled = config('inventorix.events.disable', []);
-
-        return ! in_array($eventShortName, $disabled, true);
-    }
 
     public function evaluate(mixed $stockable, Stock $stock, Location $location): void
     {
