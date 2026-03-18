@@ -107,4 +107,24 @@ return [
         'store' => env('INVENTORIX_THRESHOLD_CACHE_STORE', null), // null = default store
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Costing Strategy
+    |--------------------------------------------------------------------------
+    | The costing method used by totalValuation() to determine the value of
+    | on-hand inventory. Supported values:
+    |
+    |   'fifo'    — First In First Out (default): oldest stock sold first;
+    |               on-hand inventory is valued at the cost of newest batches.
+    |   'lifo'    — Last In First Out: newest stock sold first;
+    |               on-hand inventory is valued at the cost of oldest batches.
+    |   'average' — Weighted Average: on-hand stock is valued at the
+    |               weighted average cost across all inbound movements.
+    |
+    | The strategy is only applied when movements carry a cost_per_unit value.
+    | When no cost data is recorded on movements, valuation falls back to the
+    | stockable model's cost attribute (cost_price by default).
+    */
+    'costing_strategy' => env('INVENTORIX_COSTING', 'fifo'),
+
 ];

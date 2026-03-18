@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property string|int|float|null $quantity
+ * @property string|null $reference_type
+ * @property int|string|null $reference_id
+ */
 class Reservation extends Model
 {
     protected $fillable = [

@@ -16,17 +16,20 @@ class Movement extends Model
         'transaction_id',
         'type',
         'quantity',
+        'cost_per_unit',
         'before_quantity',
         'after_quantity',
         'reference_type',
         'reference_id',
         'note',
         'created_by',
+        'created_at',
     ];
 
     protected $casts = [
         'type' => MovementType::class,
         'quantity' => 'decimal:4',
+        'cost_per_unit' => 'decimal:4',
         'before_quantity' => 'decimal:4',
         'after_quantity' => 'decimal:4',
     ];

@@ -43,4 +43,29 @@ abstract class BaseService
     {
         return Movement::create($data);
     }
+
+    /**
+     * Resolve the cost_per_unit to record on an inbound movement.
+     *
+     * Resolution order:
+     *  1. Explicit `cost` key in $options (null means "no cost data").
+     *  2. Stockable's cost_price attribute, only when strictly positive
+     *     (zero-cost items intentionally produce null so the fallback path
+     *     in ValuationService handles them uniformly).
+     *  3. null — no cost information available.
+     */
+    protected function resolveCost(mixed $stockable, array $options): ?float
+    {
+        if (array_key_exists('cost', $options)) {
+            return $options['cost'] !== null ? (float) $options['cost'] : null;
+        }
+
+        if (isset($stockable->cost_price)) {
+            $cost = (float) $stockable->cost_price;
+
+            return $cost > 0.0 ? $cost : null;
+        }
+
+        return null;
+    }
 }

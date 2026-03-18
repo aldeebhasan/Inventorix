@@ -73,6 +73,7 @@ class TransferService extends BaseService implements TransferServiceInterface
                 'transaction_id' => $transaction->id,
                 'type' => MovementType::TransferIn,
                 'quantity' => $quantity,
+                'cost_per_unit' => $this->resolveCost($stockable, $options),
                 'before_quantity' => $beforeTo,
                 'after_quantity' => $toStock->quantity,
                 'reference_type' => isset($options['reference']) ? get_class($options['reference']) : null,
