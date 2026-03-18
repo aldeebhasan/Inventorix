@@ -5,6 +5,18 @@ namespace Aldeebhasan\Inventorix;
 use Aldeebhasan\Inventorix\Commands\ExpireReservationsCommand;
 use Aldeebhasan\Inventorix\Commands\PruneMovementsCommand;
 use Aldeebhasan\Inventorix\Commands\StockReportCommand;
+use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\StockQueryInterface;
+use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\TransferServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
+use Aldeebhasan\Inventorix\Queries\StockQueries;
+use Aldeebhasan\Inventorix\Services\ReservationService;
+use Aldeebhasan\Inventorix\Services\StockService;
+use Aldeebhasan\Inventorix\Services\ThresholdService;
+use Aldeebhasan\Inventorix\Services\TransferService;
+use Aldeebhasan\Inventorix\Services\ValuationService;
 use Illuminate\Support\ServiceProvider;
 
 class InventorixServiceProvider extends ServiceProvider
@@ -35,6 +47,22 @@ class InventorixServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/inventorix.php', 'inventorix');
 
-        $this->app->singleton(Inventorix::class);
+        $this->app->bind(ThresholdServiceInterface::class, ThresholdService::class);
+        $this->app->bind(StockServiceInterface::class, StockService::class);
+        $this->app->bind(TransferServiceInterface::class, TransferService::class);
+        $this->app->bind(ReservationServiceInterface::class, ReservationService::class);
+        $this->app->bind(ValuationServiceInterface::class, ValuationService::class);
+        $this->app->bind(StockQueryInterface::class, StockQueries::class);
+
+        $this->app->singleton(Inventorix::class, function ($app) {
+            return new Inventorix(
+                $app->make(StockServiceInterface::class),
+                $app->make(TransferServiceInterface::class),
+                $app->make(ReservationServiceInterface::class),
+                $app->make(ValuationServiceInterface::class),
+                $app->make(ThresholdServiceInterface::class),
+                $app->make(StockQueryInterface::class),
+            );
+        });
     }
 }

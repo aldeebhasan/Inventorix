@@ -93,4 +93,18 @@ return [
     'queue_alerts' => env('INVENTORIX_QUEUE_ALERTS', false),
     'alert_queue' => env('INVENTORIX_ALERT_QUEUE', 'default'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Threshold Caching
+    |--------------------------------------------------------------------------
+    | When enabled, threshold records are cached to avoid a DB query on every
+    | stock write operation. Thresholds are invalidated automatically when
+    | updated via setStockThreshold().
+    */
+    'threshold_cache' => [
+        'enabled' => env('INVENTORIX_THRESHOLD_CACHE', true),
+        'ttl' => env('INVENTORIX_THRESHOLD_TTL', 300), // seconds
+        'store' => env('INVENTORIX_THRESHOLD_CACHE_STORE', null), // null = default store
+    ],
+
 ];
