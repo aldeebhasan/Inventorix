@@ -13,8 +13,7 @@ return new class extends Migration
 
         Schema::create($tableName, function (Blueprint $table) use ($locationsTable) {
             $table->id();
-            $table->string('stockable_type');
-            $table->unsignedBigInteger('stockable_id');
+            $table->morphs('stockable');
             $table->foreignId('location_id')->constrained($locationsTable)->cascadeOnDelete();
             $table->decimal('quantity', 15, 4)->default(0);
             $table->decimal('reserved_quantity', 15, 4)->default(0);

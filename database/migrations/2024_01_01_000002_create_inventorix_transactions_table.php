@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('type');
             $table->string('status')->default('pending');
             $table->text('note')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();
         });
     }

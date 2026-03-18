@@ -13,7 +13,7 @@ readonly class StockDeducted implements ShouldDispatchAfterCommit
         public mixed $stockable,
         public Stock $stock,
         public Movement $movement,
-        public int $quantity,
+        public int|float $quantity,
         public Location $location,
     ) {}
 }

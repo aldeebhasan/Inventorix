@@ -10,7 +10,7 @@ readonly class StockTransferred implements ShouldDispatchAfterCommit
 {
     public function __construct(
         public mixed $stockable,
-        public int $quantity,
+        public int|float $quantity,
         public Location $fromLocation,
         public Location $toLocation,
         public Transaction $transaction,

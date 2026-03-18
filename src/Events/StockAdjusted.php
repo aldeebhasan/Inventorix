@@ -13,8 +13,8 @@ readonly class StockAdjusted implements ShouldDispatchAfterCommit
         public mixed $stockable,
         public Stock $stock,
         public Movement $movement,
-        public int $previousQuantity,
-        public int $newQuantity,
+        public int|float $previousQuantity,
+        public int|float $newQuantity,
         public Location $location,
     ) {}
 }

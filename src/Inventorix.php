@@ -90,17 +90,22 @@ class Inventorix
 
     private function findOrCreateStock(mixed $stockable, Location $location): Stock
     {
-        return Stock::firstOrCreate(
-            [
-                'stockable_type' => get_class($stockable),
-                'stockable_id' => $stockable->getKey(),
-                'location_id' => $location->id,
-            ],
-            [
+        $attributes = [
+            'stockable_type' => get_class($stockable),
+            'stockable_id' => $stockable->getKey(),
+            'location_id' => $location->id,
+        ];
+
+        $stock = Stock::where($attributes)->lockForUpdate()->first();
+
+        if (! $stock) {
+            $stock = Stock::create(array_merge($attributes, [
                 'quantity' => 0,
                 'reserved_quantity' => 0,
-            ]
-        );
+            ]));
+        }
+
+        return $stock;
     }
 
     private function recordMovement(array $data): Movement
@@ -404,6 +409,7 @@ class Inventorix
             $stock = Stock::where('stockable_type', $reservation->stockable_type)
                 ->where('stockable_id', $reservation->stockable_id)
                 ->where('location_id', $reservation->location_id)
+                ->lockForUpdate()
                 ->firstOrFail();
 
             $stock->decrement('reserved_quantity', $reservation->quantity);
@@ -451,6 +457,7 @@ class Inventorix
             $stock = Stock::where('stockable_type', $reservation->stockable_type)
                 ->where('stockable_id', $reservation->stockable_id)
                 ->where('location_id', $reservation->location_id)
+                ->lockForUpdate()
                 ->firstOrFail();
 
             $stock->decrement('quantity', $reservation->quantity);
@@ -546,15 +553,15 @@ class Inventorix
             $query->where('location_id', $locationModel->id);
         }
 
-        $stocks = $query->get();
         $total = 0.0;
 
-        foreach ($stocks as $stock) {
-            $stockable = $stock->stockable;
-            if ($stockable && isset($stockable->{$costAttribute})) {
-                $total += $stock->quantity * (float) $stockable->{$costAttribute};
+        $query->with('stockable')->chunkById(500, function ($stocks) use (&$total, $costAttribute) {
+            foreach ($stocks as $stock) {
+                if ($stock->stockable && isset($stock->stockable->{$costAttribute})) {
+                    $total += (float) $stock->quantity * (float) $stock->stockable->{$costAttribute};
+                }
             }
-        }
+        });
 
         return $total;
     }

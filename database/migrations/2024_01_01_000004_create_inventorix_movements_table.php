@@ -14,8 +14,7 @@ return new class extends Migration
 
         Schema::create($tableName, function (Blueprint $table) use ($locationsTable, $transactionsTable) {
             $table->id();
-            $table->string('stockable_type');
-            $table->unsignedBigInteger('stockable_id');
+            $table->morphs('stockable');
             $table->foreignId('location_id')->constrained($locationsTable)->cascadeOnDelete();
             $table->foreignId('transaction_id')->nullable()->constrained($transactionsTable)->nullOnDelete();
             $table->string('type');
@@ -25,8 +24,12 @@ return new class extends Migration
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();
+
+            $table->index('location_id');
+            $table->index('transaction_id');
+            $table->index('created_at');
         });
     }
 
