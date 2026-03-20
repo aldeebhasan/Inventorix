@@ -35,5 +35,4 @@ class AverageCostingStrategy extends AbstractCostingStrategy
 
         return (float) $stock->quantity * $avgCost;
     }
-
 }

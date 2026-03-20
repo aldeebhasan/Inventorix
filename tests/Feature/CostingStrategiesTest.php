@@ -13,7 +13,6 @@ use Aldeebhasan\Inventorix\Strategies\Costing\FifoCostingStrategy;
 use Aldeebhasan\Inventorix\Strategies\Costing\LifoCostingStrategy;
 use Aldeebhasan\Inventorix\Tests\Support\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
@@ -355,9 +354,9 @@ it('container resolves LifoCostingStrategy when configured', function () {
     // Re-bind so config change takes effect
     app()->bind(CostingStrategyInterface::class, function () {
         return match (config('inventorix.costing_strategy', 'fifo')) {
-            'lifo'    => new LifoCostingStrategy,
+            'lifo' => new LifoCostingStrategy,
             'average' => new AverageCostingStrategy,
-            default   => new FifoCostingStrategy,
+            default => new FifoCostingStrategy,
         };
     });
 
@@ -368,9 +367,9 @@ it('container resolves AverageCostingStrategy when configured', function () {
     config(['inventorix.costing_strategy' => 'average']);
     app()->bind(CostingStrategyInterface::class, function () {
         return match (config('inventorix.costing_strategy', 'fifo')) {
-            'lifo'    => new LifoCostingStrategy,
+            'lifo' => new LifoCostingStrategy,
             'average' => new AverageCostingStrategy,
-            default   => new FifoCostingStrategy,
+            default => new FifoCostingStrategy,
         };
     });
 
@@ -381,9 +380,9 @@ it('container resolves FifoCostingStrategy for unknown strategy value', function
     config(['inventorix.costing_strategy' => 'unknown']);
     app()->bind(CostingStrategyInterface::class, function () {
         return match (config('inventorix.costing_strategy', 'fifo')) {
-            'lifo'    => new LifoCostingStrategy,
+            'lifo' => new LifoCostingStrategy,
             'average' => new AverageCostingStrategy,
-            default   => new FifoCostingStrategy,
+            default => new FifoCostingStrategy,
         };
     });
 
