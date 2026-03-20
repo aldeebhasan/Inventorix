@@ -6,6 +6,7 @@ use Aldeebhasan\Inventorix\Facades\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
+use Aldeebhasan\Inventorix\Services\ValuationService;
 use Aldeebhasan\Inventorix\Strategies\Costing\AverageCostingStrategy;
 use Aldeebhasan\Inventorix\Strategies\Costing\FifoCostingStrategy;
 use Aldeebhasan\Inventorix\Strategies\Costing\LifoCostingStrategy;
@@ -491,7 +492,7 @@ describe('totalValuation with costing strategies', function () {
         Inventorix::deductStock($product, 10, $this->location);
 
         // Instantiate ValuationService directly with LIFO to avoid singleton issues
-        $service = new \Aldeebhasan\Inventorix\Services\ValuationService(new LifoCostingStrategy);
+        $service = new ValuationService(new LifoCostingStrategy);
 
         // On-hand: 10 units from oldest batch @ $5 = $50
         expect($service->totalValuation())->toEqual(50.0);
@@ -504,7 +505,7 @@ describe('totalValuation with costing strategies', function () {
         Inventorix::addStock($product, 10, $this->location, ['cost' => 4.0]);
         Inventorix::addStock($product, 10, $this->location, ['cost' => 6.0]);
 
-        $service = new \Aldeebhasan\Inventorix\Services\ValuationService(new AverageCostingStrategy);
+        $service = new ValuationService(new AverageCostingStrategy);
 
         expect($service->totalValuation())->toEqual(100.0);
     });

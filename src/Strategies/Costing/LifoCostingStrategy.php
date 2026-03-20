@@ -54,5 +54,4 @@ class LifoCostingStrategy extends AbstractCostingStrategy
 
         return ($a->id ?? 0) <=> ($b->id ?? 0);
     }
-
 }

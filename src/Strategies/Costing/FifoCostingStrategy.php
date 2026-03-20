@@ -54,5 +54,4 @@ class FifoCostingStrategy extends AbstractCostingStrategy
 
         return ($b->id ?? 0) <=> ($a->id ?? 0);
     }
-
 }

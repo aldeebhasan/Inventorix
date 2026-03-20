@@ -59,9 +59,9 @@ class InventorixServiceProvider extends ServiceProvider
 
         $this->app->bind(CostingStrategyInterface::class, function () {
             return match (config('inventorix.costing_strategy', 'fifo')) {
-                'lifo'    => new LifoCostingStrategy,
+                'lifo' => new LifoCostingStrategy,
                 'average' => new AverageCostingStrategy,
-                default   => new FifoCostingStrategy,
+                default => new FifoCostingStrategy,
             };
         });
 
