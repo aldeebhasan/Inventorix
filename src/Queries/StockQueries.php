@@ -43,7 +43,7 @@ class StockQueries implements StockQueryInterface
         return $query;
     }
 
-    public function lowStockItems(?Location $location = null, ?string $stockableType = null): Collection
+    public function lowStockItems(?Location $location = null, ?string $stockableType = null, bool $includeChildren = false): Collection
     {
         $stocksTable = config('inventorix.tables.stocks', 'inventorix_stocks');
         $thresholdsTable = config('inventorix.tables.thresholds', 'inventorix_thresholds');
@@ -60,7 +60,11 @@ class StockQueries implements StockQueryInterface
             ->select("{$stocksTable}.*");
 
         if ($location !== null) {
-            $query->where("{$stocksTable}.location_id", $location->id);
+            if ($includeChildren) {
+                $query->atOrBelow($location);
+            } else {
+                $query->where("{$stocksTable}.location_id", $location->id);
+            }
         }
 
         if ($stockableType !== null) {

@@ -11,5 +11,5 @@ interface StockQueryInterface
 {
     public function movementsFor(Model $stockable, array $filters = []): Builder;
 
-    public function lowStockItems(?Location $location = null, ?string $stockableType = null): Collection;
+    public function lowStockItems(?Location $location = null, ?string $stockableType = null, bool $includeChildren = false): Collection;
 }

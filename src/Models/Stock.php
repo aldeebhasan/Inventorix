@@ -2,6 +2,7 @@
 
 namespace Aldeebhasan\Inventorix\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,5 +51,12 @@ class Stock extends Model
         return $this->hasMany(Movement::class, 'stockable_id', 'stockable_id')
             ->where('stockable_type', $this->stockable_type)
             ->where('location_id', $this->location_id);
+    }
+
+    public function scopeAtOrBelow(Builder $query, Location $location): Builder
+    {
+        $ids = array_merge([$location->id], $location->descendantIds());
+
+        return $query->whereIn('location_id', $ids);
     }
 }

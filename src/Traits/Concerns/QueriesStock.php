@@ -19,47 +19,68 @@ trait QueriesStock
             ->first();
     }
 
-    public function totalStock(): float
-    {
-        return (float) Stock::where('stockable_type', static::class)
-            ->where('stockable_id', $this->getKey())
-            ->sum('quantity');
-    }
-
-    public function availableStock(Location|int|null $location = null): float
+    public function totalStock(?Location $location = null, bool $includeChildren = false): float
     {
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
         if ($location !== null) {
-            $locationId = $location instanceof Location ? $location->id : $location;
-            $query->where('location_id', $locationId);
+            if ($includeChildren) {
+                $query->atOrBelow($location);
+            } else {
+                $query->where('location_id', $location->id);
+            }
+        }
+
+        return (float) $query->sum('quantity');
+    }
+
+    public function availableStock(Location|int|null $location = null, bool $includeChildren = false): float
+    {
+        $query = Stock::where('stockable_type', static::class)
+            ->where('stockable_id', $this->getKey());
+
+        if ($location !== null) {
+            if ($includeChildren && $location instanceof Location) {
+                $query->atOrBelow($location);
+            } else {
+                $locationId = $location instanceof Location ? $location->id : $location;
+                $query->where('location_id', $locationId);
+            }
         }
 
         return (float) $query->get()->sum(fn ($stock) => max(0, $stock->quantity - $stock->reserved_quantity));
     }
 
-    public function reservedStock(Location|int|null $location = null): float
+    public function reservedStock(Location|int|null $location = null, bool $includeChildren = false): float
     {
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
         if ($location !== null) {
-            $locationId = $location instanceof Location ? $location->id : $location;
-            $query->where('location_id', $locationId);
+            if ($includeChildren && $location instanceof Location) {
+                $query->atOrBelow($location);
+            } else {
+                $locationId = $location instanceof Location ? $location->id : $location;
+                $query->where('location_id', $locationId);
+            }
         }
 
         return (float) $query->sum('reserved_quantity');
     }
 
-    public function isLowStock(Location|int|null $location = null): bool
+    public function isLowStock(Location|int|null $location = null, bool $includeChildren = false): bool
     {
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
         if ($location !== null) {
-            $locationId = $location instanceof Location ? $location->id : $location;
-            $query->where('location_id', $locationId);
+            if ($includeChildren && $location instanceof Location) {
+                $query->atOrBelow($location);
+            } else {
+                $locationId = $location instanceof Location ? $location->id : $location;
+                $query->where('location_id', $locationId);
+            }
         }
 
         $stocks = $query->get();
@@ -82,12 +103,21 @@ trait QueriesStock
         return false;
     }
 
-    public function stockSummary(): array
+    public function stockSummary(?Location $location = null, bool $includeChildren = false): array
     {
-        $stocks = Stock::where('stockable_type', static::class)
+        $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey())
-            ->with('location')
-            ->get();
+            ->with('location');
+
+        if ($location !== null) {
+            if ($includeChildren) {
+                $query->atOrBelow($location);
+            } else {
+                $query->where('location_id', $location->id);
+            }
+        }
+
+        $stocks = $query->get();
 
         $totalQuantity = 0;
         $totalReserved = 0;
