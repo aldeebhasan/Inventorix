@@ -5,6 +5,8 @@ namespace Aldeebhasan\Inventorix\Services;
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
 use Aldeebhasan\Inventorix\Enums\MovementType;
+use Aldeebhasan\Inventorix\Enums\TransactionStatus;
+use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Events\StockAdded;
 use Aldeebhasan\Inventorix\Events\StockAdjusted;
 use Aldeebhasan\Inventorix\Events\StockDeducted;
@@ -30,6 +32,8 @@ class StockService extends BaseService implements StockServiceInterface
         }
 
         return DB::transaction(function () use ($stockable, $quantity, $location, $options) {
+            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual);
+
             $stock = $this->findOrCreateStock($stockable, $location);
             $beforeQuantity = $stock->quantity;
 
@@ -40,7 +44,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_type' => get_class($stockable),
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
-                'transaction_id' => isset($options['transaction']) ? $options['transaction']->id : null,
+                'transaction_id' => $transaction->id,
                 'type' => MovementType::Add,
                 'quantity' => $quantity,
                 'cost_per_unit' => $this->resolveCost($stockable, $options),
@@ -51,6 +55,10 @@ class StockService extends BaseService implements StockServiceInterface
                 'note' => $options['note'] ?? null,
                 'created_by' => $options['created_by'] ?? null,
             ]);
+
+            if ($autoCreated) {
+                $transaction->update(['status' => TransactionStatus::Committed]);
+            }
 
             if ($this->shouldDispatch('StockAdded')) {
                 $this->events->dispatch(new StockAdded($stockable, $stock, $movement, $quantity, $location));
@@ -69,6 +77,8 @@ class StockService extends BaseService implements StockServiceInterface
         }
 
         return DB::transaction(function () use ($stockable, $quantity, $location, $options) {
+            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual);
+
             $stock = $this->findOrCreateStock($stockable, $location);
             $allowNegative = $options['allow_negative'] ?? config('inventorix.allow_negative_stock', false);
 
@@ -87,7 +97,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_type' => get_class($stockable),
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
-                'transaction_id' => isset($options['transaction']) ? $options['transaction']->id : null,
+                'transaction_id' => $transaction->id,
                 'type' => MovementType::Deduct,
                 'quantity' => $quantity,
                 'before_quantity' => $beforeQuantity,
@@ -97,6 +107,10 @@ class StockService extends BaseService implements StockServiceInterface
                 'note' => $options['note'] ?? null,
                 'created_by' => $options['created_by'] ?? null,
             ]);
+
+            if ($autoCreated) {
+                $transaction->update(['status' => TransactionStatus::Committed]);
+            }
 
             if ($this->shouldDispatch('StockDeducted')) {
                 $this->events->dispatch(new StockDeducted($stockable, $stock, $movement, $quantity, $location));
@@ -111,6 +125,8 @@ class StockService extends BaseService implements StockServiceInterface
     public function adjust(Model $stockable, int|float $newQuantity, Location $location, array $options = []): Stock
     {
         return DB::transaction(function () use ($stockable, $newQuantity, $location, $options) {
+            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Adjustment);
+
             $stock = $this->findOrCreateStock($stockable, $location);
             $previousQuantity = $stock->quantity;
             $delta = $newQuantity - $previousQuantity;
@@ -122,7 +138,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_type' => get_class($stockable),
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
-                'transaction_id' => isset($options['transaction']) ? $options['transaction']->id : null,
+                'transaction_id' => $transaction->id,
                 'type' => MovementType::Adjustment,
                 'quantity' => $delta,
                 'cost_per_unit' => $delta > 0 ? $this->resolveCost($stockable, $options) : null,
@@ -131,6 +147,10 @@ class StockService extends BaseService implements StockServiceInterface
                 'note' => $options['note'] ?? $options['reason'] ?? null,
                 'created_by' => $options['created_by'] ?? null,
             ]);
+
+            if ($autoCreated) {
+                $transaction->update(['status' => TransactionStatus::Committed]);
+            }
 
             if ($this->shouldDispatch('StockAdjusted')) {
                 $this->events->dispatch(new StockAdjusted($stockable, $stock, $movement, $previousQuantity, $newQuantity, $location));

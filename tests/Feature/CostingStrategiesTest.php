@@ -3,10 +3,13 @@
 use Aldeebhasan\Inventorix\Contracts\CostingStrategyInterface;
 use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
 use Aldeebhasan\Inventorix\Enums\MovementType;
+use Aldeebhasan\Inventorix\Enums\TransactionStatus;
+use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Facades\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
+use Aldeebhasan\Inventorix\Models\Transaction;
 use Aldeebhasan\Inventorix\Services\ValuationService;
 use Aldeebhasan\Inventorix\Strategies\Costing\AverageCostingStrategy;
 use Aldeebhasan\Inventorix\Strategies\Costing\FifoCostingStrategy;
@@ -323,10 +326,16 @@ it('totalValuation falls back to flat cost_price when movements have no cost dat
         'reserved_quantity' => 0,
     ]);
 
+    $transaction = Transaction::create([
+        'type' => TransactionType::Manual,
+        'status' => TransactionStatus::Committed,
+    ]);
+
     Movement::create([
         'stockable_type' => Product::class,
         'stockable_id' => $this->product->id,
         'location_id' => $this->location->id,
+        'transaction_id' => $transaction->id,
         'type' => MovementType::Add,
         'quantity' => 10,
         'cost_per_unit' => null,

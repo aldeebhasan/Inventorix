@@ -6,6 +6,7 @@ use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Str;
 
 class Transaction extends Model
@@ -14,6 +15,8 @@ class Transaction extends Model
         'uuid',
         'type',
         'status',
+        'causable_type',
+        'causable_id',
         'note',
         'created_by',
     ];
@@ -37,6 +40,11 @@ class Transaction extends Model
                 $transaction->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    public function causable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function movements(): HasMany

@@ -5,6 +5,8 @@ namespace Aldeebhasan\Inventorix\Services;
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\ReservationStatus;
+use Aldeebhasan\Inventorix\Enums\TransactionStatus;
+use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Events\ReservationFulfilled;
 use Aldeebhasan\Inventorix\Events\ReservationReleased;
 use Aldeebhasan\Inventorix\Events\StockReserved;
@@ -15,6 +17,7 @@ use Aldeebhasan\Inventorix\Exceptions\ReservationNotFoundException;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
+use Aldeebhasan\Inventorix\Models\Transaction;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +33,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
         }
 
         return DB::transaction(function () use ($stockable, $quantity, $location, $reference, $options) {
+            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual, $reference);
+
             $stock = $this->findOrCreateStock($stockable, $location);
 
             if ($stock->available_quantity < $quantity) {
@@ -63,6 +68,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'stockable_type' => get_class($stockable),
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
+                'transaction_id' => $transaction->id,
                 'type' => MovementType::Reservation,
                 'quantity' => $quantity,
                 'before_quantity' => $stock->quantity,
@@ -70,6 +76,10 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'note' => $options['note'] ?? null,
                 'created_by' => $options['created_by'] ?? null,
             ]);
+
+            if ($autoCreated) {
+                $transaction->update(['status' => TransactionStatus::Committed]);
+            }
 
             if ($this->shouldDispatch('StockReserved')) {
                 $this->events->dispatch(new StockReserved($stockable, $reservation, $location));
@@ -95,6 +105,16 @@ class ReservationService extends BaseService implements ReservationServiceInterf
         return DB::transaction(function () use ($reservation) {
             $location = $reservation->location;
             $stockable = $reservation->stockable;
+            $causable = $reservation->reference;
+
+            $transaction = Transaction::create([
+                'type' => TransactionType::Manual,
+                'status' => TransactionStatus::Pending,
+                'causable_type' => $causable ? get_class($causable) : null,
+                'causable_id' => $causable ? $causable->getKey() : null,
+                'note' => $reservation->note,
+                'created_by' => $reservation->created_by,
+            ]);
 
             $stock = Stock::where('stockable_type', $reservation->stockable_type)
                 ->where('stockable_id', $reservation->stockable_id)
@@ -111,6 +131,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'stockable_type' => $reservation->stockable_type,
                 'stockable_id' => $reservation->stockable_id,
                 'location_id' => $reservation->location_id,
+                'transaction_id' => $transaction->id,
                 'type' => MovementType::ReservationRelease,
                 'quantity' => $reservation->quantity,
                 'before_quantity' => $stock->quantity,
@@ -118,6 +139,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'note' => $reservation->note,
                 'created_by' => $reservation->created_by,
             ]);
+
+            $transaction->update(['status' => TransactionStatus::Committed]);
 
             if ($this->shouldDispatch('ReservationReleased')) {
                 $this->events->dispatch(new ReservationReleased($reservation, $stockable, $location));
@@ -143,6 +166,16 @@ class ReservationService extends BaseService implements ReservationServiceInterf
         return DB::transaction(function () use ($reservation) {
             $location = $reservation->location;
             $stockable = $reservation->stockable;
+            $causable = $reservation->reference;
+
+            $transaction = Transaction::create([
+                'type' => TransactionType::Sale,
+                'status' => TransactionStatus::Pending,
+                'causable_type' => $causable ? get_class($causable) : null,
+                'causable_id' => $causable ? $causable->getKey() : null,
+                'note' => $reservation->note,
+                'created_by' => $reservation->created_by,
+            ]);
 
             $stock = Stock::where('stockable_type', $reservation->stockable_type)
                 ->where('stockable_id', $reservation->stockable_id)
@@ -160,6 +193,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'stockable_type' => $reservation->stockable_type,
                 'stockable_id' => $reservation->stockable_id,
                 'location_id' => $reservation->location_id,
+                'transaction_id' => $transaction->id,
                 'type' => MovementType::Fulfillment,
                 'quantity' => $reservation->quantity,
                 'before_quantity' => $stock->quantity + $reservation->quantity,
@@ -167,6 +201,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'note' => $reservation->note,
                 'created_by' => $reservation->created_by,
             ]);
+
+            $transaction->update(['status' => TransactionStatus::Committed]);
 
             if ($this->shouldDispatch('ReservationFulfilled')) {
                 $this->events->dispatch(new ReservationFulfilled($reservation, $stock, $stockable, $location));

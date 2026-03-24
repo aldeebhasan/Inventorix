@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->morphs('stockable');
             $table->foreignId('location_id')->constrained($locationsTable)->cascadeOnDelete();
-            $table->foreignId('transaction_id')->nullable()->constrained($transactionsTable)->nullOnDelete();
+            $table->foreignId('transaction_id')->constrained($transactionsTable)->restrictOnDelete();
             $table->string('type');
             $table->decimal('quantity', 15, 4);
             $table->decimal('before_quantity', 15, 4);

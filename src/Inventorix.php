@@ -66,12 +66,18 @@ class Inventorix
         return $this->stocks->adjust($stockable, $newQuantity, $this->resolveLocation($location), $options);
     }
 
-    public function bulk(callable $callback): Transaction
+    public function bulk(callable $callback, array $options = []): Transaction
     {
-        return DB::transaction(function () use ($callback) {
+        return DB::transaction(function () use ($callback, $options) {
+            $causable = ['causable'] ?? null;
+
             $transaction = Transaction::create([
-                'type' => TransactionType::Manual,
+                'type' => $options['transaction_type'] ?? TransactionType::Manual,
                 'status' => TransactionStatus::Pending,
+                'causable_type' => $causable ? get_class($causable) : null,
+                'causable_id' => $causable ? $causable->getKey() : null,
+                'note' => $options['note'] ?? null,
+                'created_by' => $options['created_by'] ?? null,
             ]);
 
             try {

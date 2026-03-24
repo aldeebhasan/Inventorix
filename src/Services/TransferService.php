@@ -26,9 +26,13 @@ class TransferService extends BaseService implements TransferServiceInterface
         }
 
         DB::transaction(function () use ($stockable, $quantity, $from, $to, $options) {
+            $causable = $options['causable'] ?? null;
+
             $transaction = Transaction::create([
                 'type' => TransactionType::Transfer,
                 'status' => TransactionStatus::Pending,
+                'causable_type' => $causable ? get_class($causable) : null,
+                'causable_id' => $causable ? $causable->getKey() : null,
                 'note' => $options['note'] ?? null,
                 'created_by' => $options['created_by'] ?? null,
             ]);

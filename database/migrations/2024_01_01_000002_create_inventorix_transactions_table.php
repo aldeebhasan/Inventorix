@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('uuid')->unique();
             $table->string('type');
             $table->string('status')->default('pending');
+            $table->nullableMorphs('causable');
             $table->text('note')->nullable();
             $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();

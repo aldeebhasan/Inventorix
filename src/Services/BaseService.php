@@ -2,9 +2,12 @@
 
 namespace Aldeebhasan\Inventorix\Services;
 
+use Aldeebhasan\Inventorix\Enums\TransactionStatus;
+use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
+use Aldeebhasan\Inventorix\Models\Transaction;
 
 abstract class BaseService
 {
@@ -42,6 +45,30 @@ abstract class BaseService
     protected function recordMovement(array $data): Movement
     {
         return Movement::create($data);
+    }
+
+    /**
+     * Return the provided transaction or auto-create one.
+     * Returns [$transaction, $wasAutoCreated].
+     */
+    protected function resolveOrCreateTransaction(array $options, TransactionType $defaultType, ?object $causable = null): array
+    {
+        if (isset($options['transaction'])) {
+            return [$options['transaction'], false];
+        }
+
+        $resolvedCausable = $causable ?? $options['causable'] ?? null;
+
+        $transaction = Transaction::create([
+            'type' => $options['transaction_type'] ?? $defaultType,
+            'status' => TransactionStatus::Pending,
+            'causable_type' => $resolvedCausable ? get_class($resolvedCausable) : null,
+            'causable_id' => $resolvedCausable ? $resolvedCausable->getKey() : null,
+            'note' => $options['note'] ?? null,
+            'created_by' => $options['created_by'] ?? null,
+        ]);
+
+        return [$transaction, true];
     }
 
     /**
