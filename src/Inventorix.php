@@ -8,6 +8,7 @@ use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\TransferServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Exceptions\LocationNotFoundException;
@@ -46,38 +47,36 @@ class Inventorix
         return $found;
     }
 
-    public function addStock(Model $stockable, int|float $quantity, Location|int $location, array $options = []): Stock
+    public function addStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         return $this->stocks->add($stockable, $quantity, $this->resolveLocation($location), $options);
     }
 
-    public function deductStock(Model $stockable, int|float $quantity, Location|int $location, array $options = []): Stock
+    public function deductStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         return $this->stocks->deduct($stockable, $quantity, $this->resolveLocation($location), $options);
     }
 
-    public function transfer(Model $stockable, int|float $quantity, Location|int $from, Location|int $to, array $options = []): bool
+    public function transfer(Model $stockable, int|float $quantity, Location|int $from, Location|int $to, StockOperationDto $options = new StockOperationDto): bool
     {
         return $this->transfers->transfer($stockable, $quantity, $this->resolveLocation($from), $this->resolveLocation($to), $options);
     }
 
-    public function adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, array $options = []): Stock
+    public function adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         return $this->stocks->adjust($stockable, $newQuantity, $this->resolveLocation($location), $options);
     }
 
-    public function bulk(callable $callback, array $options = []): Transaction
+    public function bulk(callable $callback, StockOperationDto $options = new StockOperationDto): Transaction
     {
         return DB::transaction(function () use ($callback, $options) {
-            $causable = $options['causable'] ?? null;
-
             $transaction = Transaction::create([
-                'type' => $options['transaction_type'] ?? TransactionType::Manual,
+                'type' => $options->transactionType ?? TransactionType::Manual,
                 'status' => TransactionStatus::Pending,
-                'causable_type' => $causable ? get_class($causable) : null,
-                'causable_id' => $causable ? $causable->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'causable_type' => $options->causable ? get_class($options->causable) : null,
+                'causable_id' => $options->causable?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             try {
@@ -92,9 +91,9 @@ class Inventorix
         });
     }
 
-    public function reserve(Model $stockable, int|float $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
+    public function reserve(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto): Reservation
     {
-        return $this->reservations->reserve($stockable, $quantity, $this->resolveLocation($location), $reference, $options);
+        return $this->reservations->reserve($stockable, $quantity, $this->resolveLocation($location), $options);
     }
 
     public function releaseReservation(Reservation|int $reservation): bool

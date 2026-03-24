@@ -4,6 +4,7 @@ namespace Aldeebhasan\Inventorix\Services;
 
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
@@ -25,7 +26,7 @@ class StockService extends BaseService implements StockServiceInterface
         private readonly ThresholdServiceInterface $thresholds
     ) {}
 
-    public function add(Model $stockable, int|float $quantity, Location $location, array $options = []): Stock
+    public function add(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
@@ -50,10 +51,10 @@ class StockService extends BaseService implements StockServiceInterface
                 'cost_per_unit' => $this->resolveCost($stockable, $options),
                 'before_quantity' => $beforeQuantity,
                 'after_quantity' => $stock->quantity,
-                'reference_type' => isset($options['reference']) ? get_class($options['reference']) : null,
-                'reference_id' => isset($options['reference']) ? $options['reference']->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'reference_type' => $options->reference ? get_class($options->reference) : null,
+                'reference_id' => $options->reference?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             if ($autoCreated) {
@@ -70,7 +71,7 @@ class StockService extends BaseService implements StockServiceInterface
         });
     }
 
-    public function deduct(Model $stockable, int|float $quantity, Location $location, array $options = []): Stock
+    public function deduct(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
@@ -80,7 +81,7 @@ class StockService extends BaseService implements StockServiceInterface
             [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual);
 
             $stock = $this->findOrCreateStock($stockable, $location);
-            $allowNegative = $options['allow_negative'] ?? config('inventorix.allow_negative_stock', false);
+            $allowNegative = $options->allowNegative || config('inventorix.allow_negative_stock', false);
 
             if (! $allowNegative && $stock->available_quantity < $quantity) {
                 throw new InsufficientStockException(
@@ -102,10 +103,10 @@ class StockService extends BaseService implements StockServiceInterface
                 'quantity' => $quantity,
                 'before_quantity' => $beforeQuantity,
                 'after_quantity' => $stock->quantity,
-                'reference_type' => isset($options['reference']) ? get_class($options['reference']) : null,
-                'reference_id' => isset($options['reference']) ? $options['reference']->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'reference_type' => $options->reference ? get_class($options->reference) : null,
+                'reference_id' => $options->reference?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             if ($autoCreated) {
@@ -122,7 +123,7 @@ class StockService extends BaseService implements StockServiceInterface
         });
     }
 
-    public function adjust(Model $stockable, int|float $newQuantity, Location $location, array $options = []): Stock
+    public function adjust(Model $stockable, int|float $newQuantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         return DB::transaction(function () use ($stockable, $newQuantity, $location, $options) {
             [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Adjustment);
@@ -144,8 +145,8 @@ class StockService extends BaseService implements StockServiceInterface
                 'cost_per_unit' => $delta > 0 ? $this->resolveCost($stockable, $options) : null,
                 'before_quantity' => $previousQuantity,
                 'after_quantity' => $newQuantity,
-                'note' => $options['note'] ?? $options['reason'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             if ($autoCreated) {

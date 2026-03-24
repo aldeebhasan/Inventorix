@@ -3,6 +3,7 @@
 namespace Aldeebhasan\Inventorix\Services;
 
 use Aldeebhasan\Inventorix\Contracts\TransferServiceInterface;
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
@@ -19,26 +20,24 @@ class TransferService extends BaseService implements TransferServiceInterface
 {
     public function __construct(private readonly Dispatcher $events) {}
 
-    public function transfer(Model $stockable, int|float $quantity, Location $from, Location $to, array $options = []): bool
+    public function transfer(Model $stockable, int|float $quantity, Location $from, Location $to, StockOperationDto $options = new StockOperationDto): bool
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
         }
 
         DB::transaction(function () use ($stockable, $quantity, $from, $to, $options) {
-            $causable = $options['causable'] ?? null;
-
             $transaction = Transaction::create([
                 'type' => TransactionType::Transfer,
                 'status' => TransactionStatus::Pending,
-                'causable_type' => $causable ? get_class($causable) : null,
-                'causable_id' => $causable ? $causable->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'causable_type' => $options->causable ? get_class($options->causable) : null,
+                'causable_id' => $options->causable?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             $fromStock = $this->findOrCreateStock($stockable, $from);
-            $allowNegative = $options['allow_negative'] ?? config('inventorix.allow_negative_stock', false);
+            $allowNegative = $options->allowNegative || config('inventorix.allow_negative_stock', false);
 
             if (! $allowNegative && $fromStock->available_quantity < $quantity) {
                 throw new InsufficientStockException(
@@ -59,10 +58,10 @@ class TransferService extends BaseService implements TransferServiceInterface
                 'quantity' => $quantity,
                 'before_quantity' => $beforeFrom,
                 'after_quantity' => $fromStock->quantity,
-                'reference_type' => isset($options['reference']) ? get_class($options['reference']) : null,
-                'reference_id' => isset($options['reference']) ? $options['reference']->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'reference_type' => $options->reference ? get_class($options->reference) : null,
+                'reference_id' => $options->reference?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             $toStock = $this->findOrCreateStock($stockable, $to);
@@ -80,10 +79,10 @@ class TransferService extends BaseService implements TransferServiceInterface
                 'cost_per_unit' => $this->resolveCost($stockable, $options),
                 'before_quantity' => $beforeTo,
                 'after_quantity' => $toStock->quantity,
-                'reference_type' => isset($options['reference']) ? get_class($options['reference']) : null,
-                'reference_id' => isset($options['reference']) ? $options['reference']->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'reference_type' => $options->reference ? get_class($options->reference) : null,
+                'reference_id' => $options->reference?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
             ]);
 
             $transaction->update(['status' => TransactionStatus::Committed]);

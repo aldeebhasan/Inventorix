@@ -2,6 +2,7 @@
 
 namespace Aldeebhasan\Inventorix\Services;
 
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Models\Location;
@@ -51,21 +52,19 @@ abstract class BaseService
      * Return the provided transaction or auto-create one.
      * Returns [$transaction, $wasAutoCreated].
      */
-    protected function resolveOrCreateTransaction(array $options, TransactionType $defaultType, ?object $causable = null): array
+    protected function resolveOrCreateTransaction(StockOperationDto $options, TransactionType $defaultType): array
     {
-        if (isset($options['transaction'])) {
-            return [$options['transaction'], false];
+        if ($options->transaction !== null) {
+            return [$options->transaction, false];
         }
 
-        $resolvedCausable = $causable ?? $options['causable'] ?? null;
-
         $transaction = Transaction::create([
-            'type' => $options['transaction_type'] ?? $defaultType,
+            'type' => $options->transactionType ?? $defaultType,
             'status' => TransactionStatus::Pending,
-            'causable_type' => $resolvedCausable ? get_class($resolvedCausable) : null,
-            'causable_id' => $resolvedCausable ? $resolvedCausable->getKey() : null,
-            'note' => $options['note'] ?? null,
-            'created_by' => $options['created_by'] ?? null,
+            'causable_type' => $options->causable ? get_class($options->causable) : null,
+            'causable_id' => $options->causable ? $options->causable->getKey() : null,
+            'note' => $options->note,
+            'created_by' => $options->createdBy,
         ]);
 
         return [$transaction, true];
@@ -75,16 +74,14 @@ abstract class BaseService
      * Resolve the cost_per_unit to record on an inbound movement.
      *
      * Resolution order:
-     *  1. Explicit `cost` key in $options (null means "no cost data").
-     *  2. Stockable's cost_price attribute, only when strictly positive
-     *     (zero-cost items intentionally produce null so the fallback path
-     *     in ValuationService handles them uniformly).
+     *  1. $options->cost !== false  → explicit value provided (null means "no cost").
+     *  2. Stockable's cost_price attribute, only when strictly positive.
      *  3. null — no cost information available.
      */
-    protected function resolveCost(mixed $stockable, array $options): ?float
+    protected function resolveCost(mixed $stockable, StockOperationDto $options): ?float
     {
-        if (array_key_exists('cost', $options)) {
-            return $options['cost'] !== null ? (float) $options['cost'] : null;
+        if ($options->cost !== false) {
+            return $options->cost !== null ? (float) $options->cost : null;
         }
 
         if (isset($stockable->cost_price)) {

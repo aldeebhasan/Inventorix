@@ -2,6 +2,7 @@
 
 namespace Aldeebhasan\Inventorix\Facades;
 
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
@@ -14,12 +15,12 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @see \Aldeebhasan\Inventorix\Inventorix
  *
- * @method static Stock addStock(Model $stockable, int $quantity, Location|int $location, array $options = [])
- * @method static Stock deductStock(Model $stockable, int $quantity, Location|int $location, array $options = [])
- * @method static bool transfer(Model $stockable, int $quantity, Location|int $from, Location|int $to, array $options = [])
- * @method static Stock adjustStock(Model $stockable, int $newQuantity, Location|int $location, array $options = [])
- * @method static Transaction bulk(callable $callback)
- * @method static Reservation reserve(Model $stockable, int $quantity, Location|int $location, ?Model $reference = null, array $options = [])
+ * @method static Stock addStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
+ * @method static Stock deductStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
+ * @method static bool transfer(Model $stockable, int|float $quantity, Location|int $from, Location|int $to, StockOperationDto $options = new StockOperationDto())
+ * @method static Stock adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
+ * @method static Transaction bulk(callable $callback, StockOperationDto $options = new StockOperationDto())
+ * @method static Reservation reserve(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
  * @method static bool releaseReservation(Reservation|int $reservation)
  * @method static Stock fulfillReservation(Reservation|int $reservation)
  * @method static Builder movementsFor(Model $stockable, array $filters = [])

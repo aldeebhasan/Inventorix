@@ -2,17 +2,17 @@
 
 namespace Aldeebhasan\Inventorix\Traits\Concerns;
 
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
-use Illuminate\Database\Eloquent\Model;
 
 trait ManagesReservations
 {
-    public function reserve(int|float $quantity, Location|int $location, ?Model $reference = null, array $options = []): Reservation
+    public function reserve(int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto): Reservation
     {
-        return app(Inventorix::class)->reserve($this, $quantity, $location, $reference, $options);
+        return app(Inventorix::class)->reserve($this, $quantity, $location, $options);
     }
 
     public function releaseReservation(Reservation|int $reservation): bool

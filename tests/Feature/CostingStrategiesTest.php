@@ -2,6 +2,7 @@
 
 use Aldeebhasan\Inventorix\Contracts\CostingStrategyInterface;
 use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
@@ -37,7 +38,7 @@ it('addStock records cost_per_unit from stockable cost_price by default', functi
 });
 
 it('addStock records cost_per_unit from explicit cost option', function () {
-    Inventorix::addStock($this->product, 10, $this->location, ['cost' => 12.50]);
+    Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(cost: 12.50));
 
     $movement = Movement::where('type', MovementType::Add->value)->first();
 
@@ -58,7 +59,7 @@ it('adjustStock records cost_per_unit only for positive delta', function () {
     Inventorix::addStock($this->product, 20, $this->location);
 
     // Upward adjustment (delta > 0) → should store cost
-    Inventorix::adjustStock($this->product, 25, $this->location, ['cost' => 11.00]);
+    Inventorix::adjustStock($this->product, 25, $this->location, new StockOperationDto(cost: 11.00));
     $positive = Movement::where('type', MovementType::Adjustment->value)
         ->orderBy('id', 'desc')->first();
     expect((float) $positive->cost_per_unit)->toEqual(11.00);
@@ -73,7 +74,7 @@ it('adjustStock records cost_per_unit only for positive delta', function () {
 it('transfer records cost_per_unit on the TransferIn movement', function () {
     $locationB = Location::create(['name' => 'Warehouse B', 'code' => 'WH-B', 'is_active' => true]);
     Inventorix::addStock($this->product, 20, $this->location);
-    Inventorix::transfer($this->product, 10, $this->location, $locationB, ['cost' => 15.00]);
+    Inventorix::transfer($this->product, 10, $this->location, $locationB, new StockOperationDto(cost: 15.00));
 
     $transferIn = Movement::where('type', MovementType::TransferIn->value)->first();
 
@@ -280,8 +281,8 @@ it('totalValuation uses FIFO strategy and values remaining stock at newest batch
     config(['inventorix.costing_strategy' => 'fifo']);
 
     // Simulate two separate purchase batches with different costs
-    Inventorix::addStock($productA, 10, $this->location, ['cost' => 5.00]);
-    Inventorix::addStock($productA, 10, $this->location, ['cost' => 10.00]);
+    Inventorix::addStock($productA, 10, $this->location, new StockOperationDto(cost: 5.00));
+    Inventorix::addStock($productA, 10, $this->location, new StockOperationDto(cost: 10.00));
     Inventorix::deductStock($productA, 10, $this->location);
 
     // Remaining 10 units should be valued at newest batch: 10 × 10 = 100
@@ -296,8 +297,8 @@ it('totalValuation uses LIFO strategy and values remaining stock at oldest batch
     $productA = Product::create(['name' => 'B', 'cost_price' => 5.00]);
     config(['inventorix.costing_strategy' => 'lifo']);
 
-    Inventorix::addStock($productA, 10, $this->location, ['cost' => 5.00]);
-    Inventorix::addStock($productA, 10, $this->location, ['cost' => 10.00]);
+    Inventorix::addStock($productA, 10, $this->location, new StockOperationDto(cost: 5.00));
+    Inventorix::addStock($productA, 10, $this->location, new StockOperationDto(cost: 10.00));
     Inventorix::deductStock($productA, 10, $this->location);
 
     $strategy = new LifoCostingStrategy;
@@ -309,8 +310,8 @@ it('totalValuation uses Average strategy correctly', function () {
     // 10 @ £4 + 10 @ £6 → avg £5 × 20 on hand = 100
     $productA = Product::create(['name' => 'C', 'cost_price' => 4.00]);
 
-    Inventorix::addStock($productA, 10, $this->location, ['cost' => 4.00]);
-    Inventorix::addStock($productA, 10, $this->location, ['cost' => 6.00]);
+    Inventorix::addStock($productA, 10, $this->location, new StockOperationDto(cost: 4.00));
+    Inventorix::addStock($productA, 10, $this->location, new StockOperationDto(cost: 6.00));
 
     $service = new ValuationService(new AverageCostingStrategy);
     expect($service->totalValuation())->toEqual(100.0);
@@ -404,8 +405,8 @@ it('container resolves FifoCostingStrategy for unknown strategy value', function
 
 it('Inventorix::totalValuation integrates with costing strategy end-to-end', function () {
     // product cost_price is 10.00; two batches at different prices
-    Inventorix::addStock($this->product, 5, $this->location, ['cost' => 8.00]);
-    Inventorix::addStock($this->product, 5, $this->location, ['cost' => 12.00]);
+    Inventorix::addStock($this->product, 5, $this->location, new StockOperationDto(cost: 8.00));
+    Inventorix::addStock($this->product, 5, $this->location, new StockOperationDto(cost: 12.00));
 
     // FIFO: on-hand = newest batch (5 @ 12) + 0 leftover from older = 5 × 12 = 60
     // But only 10 total on hand and newest 5 @ 12 + oldest 5 @ 8 = 60 + 40 = 100
@@ -415,8 +416,8 @@ it('Inventorix::totalValuation integrates with costing strategy end-to-end', fun
 it('Inventorix::totalValuation with location scope uses strategy on filtered stocks', function () {
     $locationB = Location::create(['name' => 'B', 'code' => 'WH-B', 'is_active' => true]);
 
-    Inventorix::addStock($this->product, 10, $this->location, ['cost' => 10.00]);
-    Inventorix::addStock($this->product, 5, $locationB, ['cost' => 20.00]);
+    Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(cost: 10.00));
+    Inventorix::addStock($this->product, 5, $locationB, new StockOperationDto(cost: 20.00));
 
     // Only WH-A: 10 @ 10 = 100
     expect(Inventorix::totalValuation($this->location))->toEqual(100.0);

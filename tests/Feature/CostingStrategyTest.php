@@ -1,6 +1,7 @@
 <?php
 
 use Aldeebhasan\Inventorix\Contracts\CostingStrategyInterface;
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
@@ -413,7 +414,7 @@ describe('cost_per_unit capture on movements', function () {
     });
 
     it('addStock records cost_per_unit from the cost option when provided', function () {
-        Inventorix::addStock($this->product, 5, $this->location, ['cost' => 12.50]);
+        Inventorix::addStock($this->product, 5, $this->location, new StockOperationDto(cost: 12.50));
 
         $movement = Movement::first();
         expect((float) $movement->cost_per_unit)->toEqual(12.5);
@@ -469,11 +470,11 @@ describe('totalValuation with costing strategies', function () {
         $product = Product::create(['name' => 'Widget', 'cost_price' => 0]);
 
         // Add two batches at different costs
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 5.0]);
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 5.0));
 
         // Move time forward so second batch has a later created_at
         Carbon::setTestNow(Carbon::now()->addSecond());
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 8.0]);
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 8.0));
         Carbon::setTestNow(null);
 
         // Deduct 10 (FIFO: oldest batch removed first)
@@ -486,10 +487,10 @@ describe('totalValuation with costing strategies', function () {
     it('uses LIFO when configured', function () {
         $product = Product::create(['name' => 'Widget', 'cost_price' => 0]);
 
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 5.0]);
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 5.0));
 
         Carbon::setTestNow(Carbon::now()->addSecond());
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 8.0]);
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 8.0));
         Carbon::setTestNow(null);
 
         Inventorix::deductStock($product, 10, $this->location);
@@ -505,8 +506,8 @@ describe('totalValuation with costing strategies', function () {
         $product = Product::create(['name' => 'Widget', 'cost_price' => 0]);
 
         // 10 @ $4 + 10 @ $6 → avg = $5; 20 on hand → $100
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 4.0]);
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 6.0]);
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 4.0));
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 6.0));
 
         $service = new ValuationService(new AverageCostingStrategy);
 
@@ -554,8 +555,8 @@ describe('totalValuation with costing strategies', function () {
         $locationB = Location::create(['name' => 'Warehouse B', 'code' => 'WH-B', 'is_active' => true]);
         $product = Product::create(['name' => 'Widget', 'cost_price' => 0]);
 
-        Inventorix::addStock($product, 10, $this->location, ['cost' => 5.0]);
-        Inventorix::addStock($product, 5, $locationB, ['cost' => 8.0]);
+        Inventorix::addStock($product, 10, $this->location, new StockOperationDto(cost: 5.0));
+        Inventorix::addStock($product, 5, $locationB, new StockOperationDto(cost: 8.0));
 
         // Location A: 10 × $5 = $50
         expect(Inventorix::totalValuation($this->location))->toEqual(50.0);

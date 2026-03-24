@@ -1,5 +1,6 @@
 <?php
 
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Exceptions\InsufficientStockException;
@@ -47,7 +48,7 @@ it('deductStock throws InsufficientStockException when insufficient', function (
 
 it('deductStock allows negative when allow_negative=true', function () {
     $this->product->addStock(10, $this->location);
-    $stock = $this->product->deductStock(20, $this->location, ['allow_negative' => true]);
+    $stock = $this->product->deductStock(20, $this->location, new StockOperationDto(allowNegative: true));
 
     expect($stock->quantity)->toEqual(-10);
 });
@@ -96,8 +97,8 @@ it('bulk operation groups movements in same Transaction', function () {
     $product2 = Product::create(['name' => 'Gadget', 'cost_price' => 5.00]);
 
     $transaction = Inventorix::bulk(function (Transaction $tx) use ($product2) {
-        Inventorix::addStock($this->product, 100, $this->location, ['transaction' => $tx]);
-        Inventorix::addStock($product2, 50, $this->location, ['transaction' => $tx]);
+        Inventorix::addStock($this->product, 100, $this->location, new StockOperationDto(transaction: $tx));
+        Inventorix::addStock($product2, 50, $this->location, new StockOperationDto(transaction: $tx));
     });
 
     expect($transaction->status)->toBe(TransactionStatus::Committed);

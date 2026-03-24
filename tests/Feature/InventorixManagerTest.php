@@ -1,5 +1,6 @@
 <?php
 
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\ReservationStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
@@ -109,7 +110,7 @@ it('deductStock throws InsufficientStockException when stock is too low', functi
 
 it('deductStock allows going negative when allow_negative option is true', function () {
     Inventorix::addStock($this->product, 10, $this->location);
-    $stock = Inventorix::deductStock($this->product, 30, $this->location, ['allow_negative' => true]);
+    $stock = Inventorix::deductStock($this->product, 30, $this->location, new StockOperationDto(allowNegative: true));
 
     expect($stock->quantity)->toEqual(-20);
 });
@@ -236,8 +237,8 @@ it('bulk groups multiple operations under one committed Transaction', function (
     $product2 = Product::create(['name' => 'Gadget', 'cost_price' => 5.00]);
 
     $transaction = Inventorix::bulk(function (Transaction $tx) use ($product2) {
-        Inventorix::addStock($this->product, 100, $this->location, ['transaction' => $tx]);
-        Inventorix::addStock($product2, 50, $this->location, ['transaction' => $tx]);
+        Inventorix::addStock($this->product, 100, $this->location, new StockOperationDto(transaction: $tx));
+        Inventorix::addStock($product2, 50, $this->location, new StockOperationDto(transaction: $tx));
     });
 
     expect($transaction)->toBeInstanceOf(Transaction::class)

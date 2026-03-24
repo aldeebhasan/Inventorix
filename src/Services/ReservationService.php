@@ -3,6 +3,7 @@
 namespace Aldeebhasan\Inventorix\Services;
 
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
+use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\ReservationStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
@@ -26,13 +27,13 @@ class ReservationService extends BaseService implements ReservationServiceInterf
 {
     public function __construct(private readonly Dispatcher $events) {}
 
-    public function reserve(Model $stockable, int|float $quantity, Location $location, ?Model $reference = null, array $options = []): Reservation
+    public function reserve(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Reservation
     {
         if ($quantity <= 0) {
             throw new InvalidQuantityException;
         }
 
-        return DB::transaction(function () use ($stockable, $quantity, $location, $reference, $options) {
+        return DB::transaction(function () use ($stockable, $quantity, $location, $options) {
             $stock = $this->findOrCreateStock($stockable, $location);
 
             if ($stock->available_quantity < $quantity) {
@@ -43,7 +44,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
 
             $stock->increment('reserved_quantity', $quantity);
 
-            $expiresAt = $options['expires_at'] ?? null;
+            $expiresAt = $options->expiresAt;
             if ($expiresAt === null && config('inventorix.reservation_ttl_minutes') !== null) {
                 $expiresAt = now()->addMinutes(config('inventorix.reservation_ttl_minutes'));
             }
@@ -54,10 +55,10 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'location_id' => $location->id,
                 'quantity' => $quantity,
                 'status' => ReservationStatus::Pending,
-                'reference_type' => $reference ? get_class($reference) : null,
-                'reference_id' => $reference ? $reference->getKey() : null,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
+                'reference_type' => $options->reference ? get_class($options->reference) : null,
+                'reference_id' => $options->reference?->getKey(),
+                'note' => $options->note,
+                'created_by' => $options->createdBy,
                 'expires_at' => $expiresAt,
             ]);
 
@@ -126,7 +127,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'type' => TransactionType::Sale,
                 'status' => TransactionStatus::Pending,
                 'causable_type' => $causable ? get_class($causable) : null,
-                'causable_id' => $causable ? $causable->getKey() : null,
+                'causable_id' => $causable?->getKey(),
                 'note' => $reservation->note,
                 'created_by' => $reservation->created_by,
             ]);
