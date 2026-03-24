@@ -69,7 +69,7 @@ class Inventorix
     public function bulk(callable $callback, array $options = []): Transaction
     {
         return DB::transaction(function () use ($callback, $options) {
-            $causable = ['causable'] ?? null;
+            $causable = $options['causable'] ?? null;
 
             $transaction = Transaction::create([
                 'type' => $options['transaction_type'] ?? TransactionType::Manual,

@@ -33,8 +33,6 @@ class ReservationService extends BaseService implements ReservationServiceInterf
         }
 
         return DB::transaction(function () use ($stockable, $quantity, $location, $reference, $options) {
-            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual, $reference);
-
             $stock = $this->findOrCreateStock($stockable, $location);
 
             if ($stock->available_quantity < $quantity) {
@@ -44,7 +42,6 @@ class ReservationService extends BaseService implements ReservationServiceInterf
             }
 
             $stock->increment('reserved_quantity', $quantity);
-            $stock->refresh();
 
             $expiresAt = $options['expires_at'] ?? null;
             if ($expiresAt === null && config('inventorix.reservation_ttl_minutes') !== null) {
@@ -63,23 +60,6 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'created_by' => $options['created_by'] ?? null,
                 'expires_at' => $expiresAt,
             ]);
-
-            $this->recordMovement([
-                'stockable_type' => get_class($stockable),
-                'stockable_id' => $stockable->getKey(),
-                'location_id' => $location->id,
-                'transaction_id' => $transaction->id,
-                'type' => MovementType::Reservation,
-                'quantity' => $quantity,
-                'before_quantity' => $stock->quantity,
-                'after_quantity' => $stock->quantity,
-                'note' => $options['note'] ?? null,
-                'created_by' => $options['created_by'] ?? null,
-            ]);
-
-            if ($autoCreated) {
-                $transaction->update(['status' => TransactionStatus::Committed]);
-            }
 
             if ($this->shouldDispatch('StockReserved')) {
                 $this->events->dispatch(new StockReserved($stockable, $reservation, $location));
@@ -105,16 +85,6 @@ class ReservationService extends BaseService implements ReservationServiceInterf
         return DB::transaction(function () use ($reservation) {
             $location = $reservation->location;
             $stockable = $reservation->stockable;
-            $causable = $reservation->reference;
-
-            $transaction = Transaction::create([
-                'type' => TransactionType::Manual,
-                'status' => TransactionStatus::Pending,
-                'causable_type' => $causable ? get_class($causable) : null,
-                'causable_id' => $causable ? $causable->getKey() : null,
-                'note' => $reservation->note,
-                'created_by' => $reservation->created_by,
-            ]);
 
             $stock = Stock::where('stockable_type', $reservation->stockable_type)
                 ->where('stockable_id', $reservation->stockable_id)
@@ -123,24 +93,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 ->firstOrFail();
 
             $stock->decrement('reserved_quantity', $reservation->quantity);
-            $stock->refresh();
 
             $reservation->update(['status' => ReservationStatus::Released]);
-
-            $this->recordMovement([
-                'stockable_type' => $reservation->stockable_type,
-                'stockable_id' => $reservation->stockable_id,
-                'location_id' => $reservation->location_id,
-                'transaction_id' => $transaction->id,
-                'type' => MovementType::ReservationRelease,
-                'quantity' => $reservation->quantity,
-                'before_quantity' => $stock->quantity,
-                'after_quantity' => $stock->quantity,
-                'note' => $reservation->note,
-                'created_by' => $reservation->created_by,
-            ]);
-
-            $transaction->update(['status' => TransactionStatus::Committed]);
 
             if ($this->shouldDispatch('ReservationReleased')) {
                 $this->events->dispatch(new ReservationReleased($reservation, $stockable, $location));
