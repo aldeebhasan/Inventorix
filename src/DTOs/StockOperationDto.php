@@ -6,7 +6,7 @@ use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Models\Transaction;
 use Illuminate\Database\Eloquent\Model;
 
-final class StockOperationDto
+final readonly class StockOperationDto
 {
     public function __construct(
         public readonly ?Transaction $transaction = null,
@@ -23,5 +23,6 @@ final class StockOperationDto
         public readonly ?int $createdBy = null,
         public readonly bool $allowNegative = false,
         public readonly ?\DateTimeInterface $expiresAt = null,
-    ) {}
+    ) {
+    }
 }
