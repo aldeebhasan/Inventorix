@@ -22,6 +22,7 @@ return new class extends Migration
             $table->decimal('before_quantity', 15, 4);
             $table->decimal('after_quantity', 15, 4);
             $table->decimal('cost_per_unit', 15, 4)->nullable();
+            $table->decimal('consumed_quantity', 15, 4)->default(0)->after('quantity');
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();

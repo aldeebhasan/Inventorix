@@ -23,6 +23,5 @@ final readonly class StockOperationDto
         public readonly ?int $createdBy = null,
         public readonly bool $allowNegative = false,
         public readonly ?\DateTimeInterface $expiresAt = null,
-    ) {
-    }
+    ) {}
 }

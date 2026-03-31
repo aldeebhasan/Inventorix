@@ -2,12 +2,23 @@
 
 namespace Aldeebhasan\Inventorix\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string|null $code
+ * @property int|null $parent_id
+ * @property bool $is_active
+ * @property array|null $meta
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Location extends Model
 {
     protected $fillable = [

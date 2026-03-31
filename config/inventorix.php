@@ -2,6 +2,7 @@
 
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
+use Aldeebhasan\Inventorix\Models\MovementSource;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Transaction;
@@ -18,6 +19,7 @@ return [
     'tables' => [
         'stocks' => 'inventorix_stocks',
         'movements' => 'inventorix_movements',
+        'movement_sources' => 'inventorix_movement_sources',
         'locations' => 'inventorix_locations',
         'reservations' => 'inventorix_reservations',
         'transactions' => 'inventorix_transactions',
@@ -32,6 +34,7 @@ return [
     'models' => [
         'stock' => Stock::class,
         'movement' => Movement::class,
+        'movement_source' => MovementSource::class,
         'location' => Location::class,
         'reservation' => Reservation::class,
         'transaction' => Transaction::class,

@@ -13,6 +13,7 @@ use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\TransferServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
 use Aldeebhasan\Inventorix\Queries\StockQueries;
+use Aldeebhasan\Inventorix\Services\CostingService;
 use Aldeebhasan\Inventorix\Services\ReservationService;
 use Aldeebhasan\Inventorix\Services\StockService;
 use Aldeebhasan\Inventorix\Services\ThresholdService;
@@ -21,6 +22,7 @@ use Aldeebhasan\Inventorix\Services\ValuationService;
 use Aldeebhasan\Inventorix\Strategies\Costing\AverageCostingStrategy;
 use Aldeebhasan\Inventorix\Strategies\Costing\FifoCostingStrategy;
 use Aldeebhasan\Inventorix\Strategies\Costing\LifoCostingStrategy;
+use Aldeebhasan\Inventorix\Support\ThresholdCache;
 use Illuminate\Support\ServiceProvider;
 
 class InventorixServiceProvider extends ServiceProvider
@@ -51,6 +53,8 @@ class InventorixServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/inventorix.php', 'inventorix');
 
+        $this->app->singleton(CostingService::class);
+        $this->app->singleton(ThresholdCache::class);
         $this->app->bind(ThresholdServiceInterface::class, ThresholdService::class);
         $this->app->bind(StockServiceInterface::class, StockService::class);
         $this->app->bind(TransferServiceInterface::class, TransferService::class);

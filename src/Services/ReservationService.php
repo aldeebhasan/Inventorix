@@ -25,7 +25,10 @@ use Illuminate\Support\Facades\DB;
 
 class ReservationService extends BaseService implements ReservationServiceInterface
 {
-    public function __construct(private readonly Dispatcher $events) {}
+    public function __construct(
+        private readonly Dispatcher $events,
+        private readonly CostingService $costing
+    ) {}
 
     public function reserve(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Reservation
     {
@@ -144,7 +147,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
 
             $reservation->update(['status' => ReservationStatus::Fulfilled]);
 
-            $this->recordMovement([
+            $movement = $this->recordMovement([
                 'stockable_type' => $reservation->stockable_type,
                 'stockable_id' => $reservation->stockable_id,
                 'location_id' => $reservation->location_id,
@@ -156,6 +159,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'note' => $reservation->note,
                 'created_by' => $reservation->created_by,
             ]);
+
+            $this->costing->linkSources($movement);
 
             $transaction->update(['status' => TransactionStatus::Committed]);
 

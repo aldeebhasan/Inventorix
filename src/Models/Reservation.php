@@ -3,15 +3,27 @@
 namespace Aldeebhasan\Inventorix\Models;
 
 use Aldeebhasan\Inventorix\Enums\ReservationStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
- * @property string|int|float|null $quantity
+ * @property int $id
+ * @property string|null $stockable_type
+ * @property int|null $stockable_id
+ * @property int|null $location_id
+ * @property Location $location
+ * @property int|float $quantity
+ * @property ReservationStatus $status
  * @property string|null $reference_type
- * @property int|string|null $reference_id
+ * @property int|null $reference_id
+ * @property string|null $note
+ * @property int|null $created_by
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Reservation extends Model
 {

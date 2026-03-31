@@ -8,3 +8,6 @@ parameters:
         - config
         - database
     tmpDir: build/phpstan
+    ignoreErrors:
+        -  identifier: larastan.noEnvCallsOutsideOfConfig
+        -  identifier: trait.unused

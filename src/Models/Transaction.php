@@ -4,11 +4,24 @@ namespace Aldeebhasan\Inventorix\Models;
 
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property TransactionType $type
+ * @property TransactionStatus $status
+ * @property string|null $causable_type
+ * @property int|null $causable_id
+ * @property string|null $note
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Transaction extends Model
 {
     protected $fillable = [

@@ -92,4 +92,14 @@ abstract class BaseService
 
         return null;
     }
+
+    /**
+     * Recompute cost_per_unit for a deduction from its current movement_sources and
+     * persist the result on the movement. Useful after correcting a source lot's cost.
+     * Returns the new cost, or null when no sources exist.
+     */
+    protected function computeDeductionCost(Movement $movement): ?float
+    {
+        return app(CostingService::class)->recomputeAndStore($movement);
+    }
 }

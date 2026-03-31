@@ -35,7 +35,7 @@ class StockReportCommand extends Command
             return [
                 $stock->stockable_type,
                 $stock->stockable_id,
-                $stock->location?->name ?? $stock->location_id,
+                $stock->location->name,
                 $stock->quantity,
                 $stock->reserved_quantity,
                 max(0, $stock->quantity - $stock->reserved_quantity),

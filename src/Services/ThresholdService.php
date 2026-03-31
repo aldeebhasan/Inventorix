@@ -13,11 +13,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class ThresholdService extends BaseService implements ThresholdServiceInterface
 {
-    public function __construct(private readonly Dispatcher $events) {}
+    public function __construct(
+        private readonly Dispatcher $events,
+        private readonly ThresholdCache $cache
+    ) {}
 
     public function evaluate(mixed $stockable, Stock $stock, Location $location): void
     {
-        $threshold = ThresholdCache::get(get_class($stockable), $stockable->getKey(), $location->id);
+        $threshold = $this->cache->get(get_class($stockable), $stockable->getKey(), $location->id);
 
         if (! $threshold) {
             return;

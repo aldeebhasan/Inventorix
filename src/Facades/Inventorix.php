@@ -15,12 +15,12 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @see \Aldeebhasan\Inventorix\Inventorix
  *
- * @method static Stock addStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
- * @method static Stock deductStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
- * @method static bool transfer(Model $stockable, int|float $quantity, Location|int $from, Location|int $to, StockOperationDto $options = new StockOperationDto())
- * @method static Stock adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
- * @method static Transaction bulk(callable $callback, StockOperationDto $options = new StockOperationDto())
- * @method static Reservation reserve(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options = new StockOperationDto())
+ * @method static Stock addStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options)
+ * @method static Stock deductStock(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options)
+ * @method static bool transfer(Model $stockable, int|float $quantity, Location|int $from, Location|int $to, StockOperationDto $options)
+ * @method static Stock adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, StockOperationDto $options)
+ * @method static Transaction bulk(callable $callback, StockOperationDto $options)
+ * @method static Reservation reserve(Model $stockable, int|float $quantity, Location|int $location, StockOperationDto $options)
  * @method static bool releaseReservation(Reservation|int $reservation)
  * @method static Stock fulfillReservation(Reservation|int $reservation)
  * @method static Builder movementsFor(Model $stockable, array $filters = [])

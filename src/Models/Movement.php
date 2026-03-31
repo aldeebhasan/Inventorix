@@ -3,10 +3,32 @@
 namespace Aldeebhasan\Inventorix\Models;
 
 use Aldeebhasan\Inventorix\Enums\MovementType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property int $id
+ * @property string $stockable_type
+ * @property int $stockable_id
+ * @property int $location_id
+ * @property Location $location
+ * @property int $transaction_id
+ * @property MovementType $type
+ * @property int|float $quantity
+ * @property int|float $consumed_quantity
+ * @property int|float|null $cost_per_unit
+ * @property int|float $before_quantity
+ * @property int|float $after_quantity
+ * @property string|null $reference_type
+ * @property int|null $reference_id
+ * @property string|null $note
+ * @property int|null $created_by
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Movement extends Model
 {
     protected $fillable = [
@@ -16,6 +38,7 @@ class Movement extends Model
         'transaction_id',
         'type',
         'quantity',
+        'consumed_quantity',
         'cost_per_unit',
         'before_quantity',
         'after_quantity',
@@ -29,6 +52,7 @@ class Movement extends Model
     protected $casts = [
         'type' => MovementType::class,
         'quantity' => 'decimal:4',
+        'consumed_quantity' => 'decimal:4',
         'cost_per_unit' => 'decimal:4',
         'before_quantity' => 'decimal:4',
         'after_quantity' => 'decimal:4',
@@ -57,5 +81,21 @@ class Movement extends Model
     public function reference(): MorphTo
     {
         return $this->morphTo('reference');
+    }
+
+    /**
+     * The lot allocations that link this deduction movement to its source Add movements.
+     */
+    public function sources(): HasMany
+    {
+        return $this->hasMany(MovementSource::class, 'deduction_movement_id');
+    }
+
+    /**
+     * The deduction allocations that have consumed from this inbound movement.
+     */
+    public function consumedBy(): HasMany
+    {
+        return $this->hasMany(MovementSource::class, 'source_movement_id');
     }
 }

@@ -2,10 +2,22 @@
 
 namespace Aldeebhasan\Inventorix\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property int $id
+ * @property string|null $stockable_type
+ * @property int|null $stockable_id
+ * @property int|null $location_id
+ * @property Location $location
+ * @property int|float $min_quantity
+ * @property int|float $max_quantity
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Threshold extends Model
 {
     protected $fillable = [

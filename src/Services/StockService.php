@@ -23,7 +23,8 @@ class StockService extends BaseService implements StockServiceInterface
 {
     public function __construct(
         private readonly Dispatcher $events,
-        private readonly ThresholdServiceInterface $thresholds
+        private readonly ThresholdServiceInterface $thresholds,
+        private readonly CostingService $costing
     ) {}
 
     public function add(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
@@ -108,6 +109,8 @@ class StockService extends BaseService implements StockServiceInterface
                 'note' => $options->note,
                 'created_by' => $options->createdBy,
             ]);
+
+            $this->costing->linkSources($movement);
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);
