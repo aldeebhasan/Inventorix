@@ -118,11 +118,11 @@ class Inventorix
         return $this->queries->lowStockItems($resolvedLocation, $stockableType);
     }
 
-    public function totalValuation(Location|int|null $location = null, string $costAttribute = 'cost_price'): float
+    public function totalValuation(Location|int|null $location = null, ?Model $stockable = null, string $costAttribute = 'cost_price'): float
     {
         $resolvedLocation = $location !== null ? $this->resolveLocation($location) : null;
 
-        return $this->valuation->totalValuation($resolvedLocation, $costAttribute);
+        return $this->valuation->totalValuation($resolvedLocation, $stockable, $costAttribute);
     }
 
     public function checkThresholds(Model $stockable, Location|int|null $location = null): void

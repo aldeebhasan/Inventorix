@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int|null $stockable_id
  * @property int|null $location_id
  * @property Location $location
- * @property int|float $min_quantity
- * @property int|float $max_quantity
+ * @property int|float|null $min_quantity
+ * @property int|float|null $max_quantity
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */

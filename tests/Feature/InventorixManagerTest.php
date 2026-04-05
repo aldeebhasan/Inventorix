@@ -518,7 +518,7 @@ it('totalValuation supports a custom cost attribute', function () {
     Inventorix::addStock($product, 4, $this->location);
 
     // cost_price is 0 so valuation should be 0 with the default attribute
-    expect(Inventorix::totalValuation(null, 'cost_price'))->toEqual(0.0);
+    expect(Inventorix::totalValuation(null, null, 'cost_price'))->toEqual(0.0);
 });
 
 it('totalValuation returns 0.0 when no stocks exist', function () {

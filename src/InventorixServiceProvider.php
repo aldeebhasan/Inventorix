@@ -5,7 +5,6 @@ namespace Aldeebhasan\Inventorix;
 use Aldeebhasan\Inventorix\Commands\ExpireReservationsCommand;
 use Aldeebhasan\Inventorix\Commands\PruneMovementsCommand;
 use Aldeebhasan\Inventorix\Commands\StockReportCommand;
-use Aldeebhasan\Inventorix\Contracts\CostingStrategyInterface;
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\StockQueryInterface;
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
@@ -19,9 +18,6 @@ use Aldeebhasan\Inventorix\Services\StockService;
 use Aldeebhasan\Inventorix\Services\ThresholdService;
 use Aldeebhasan\Inventorix\Services\TransferService;
 use Aldeebhasan\Inventorix\Services\ValuationService;
-use Aldeebhasan\Inventorix\Strategies\Costing\AverageCostingStrategy;
-use Aldeebhasan\Inventorix\Strategies\Costing\FifoCostingStrategy;
-use Aldeebhasan\Inventorix\Strategies\Costing\LifoCostingStrategy;
 use Aldeebhasan\Inventorix\Support\ThresholdCache;
 use Illuminate\Support\ServiceProvider;
 
@@ -60,18 +56,7 @@ class InventorixServiceProvider extends ServiceProvider
         $this->app->bind(TransferServiceInterface::class, TransferService::class);
         $this->app->bind(ReservationServiceInterface::class, ReservationService::class);
         $this->app->bind(StockQueryInterface::class, StockQueries::class);
-
-        $this->app->bind(CostingStrategyInterface::class, function () {
-            return match (config('inventorix.costing_strategy', 'fifo')) {
-                'lifo' => new LifoCostingStrategy,
-                'average' => new AverageCostingStrategy,
-                default => new FifoCostingStrategy,
-            };
-        });
-
-        $this->app->bind(ValuationServiceInterface::class, function ($app) {
-            return new ValuationService($app->make(CostingStrategyInterface::class));
-        });
+        $this->app->singleton(ValuationServiceInterface::class, ValuationService::class);
 
         $this->app->singleton(Inventorix::class, function ($app) {
             return new Inventorix(

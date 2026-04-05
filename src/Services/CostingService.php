@@ -15,7 +15,7 @@ class CostingService
      * Link a deduction (or fulfillment) movement back to its source lots, then store the
      * derived cost_per_unit on the movement so retrieval is a plain column read.
      *
-     * Dispatches to the correct path based on strategy — AVERAGE has no ordering requirement
+     * Dispatches to the correct path based on strategy — average has no ordering requirement
      * and no sequential loop, so it runs a separate, simpler query.
      */
     public function linkSources(Movement $deduction): void
