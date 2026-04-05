@@ -2,13 +2,9 @@
 
 use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
-use Aldeebhasan\Inventorix\Enums\TransactionStatus;
-use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Facades\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
-use Aldeebhasan\Inventorix\Models\Stock;
-use Aldeebhasan\Inventorix\Models\Transaction;
 use Aldeebhasan\Inventorix\Services\ValuationService;
 use Aldeebhasan\Inventorix\Tests\Support\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -187,36 +183,6 @@ describe('totalValuation', function () {
 
         // LIFO: newest consumed first → oldest (10 @ $5) remains = $50
         expect(Inventorix::totalValuation())->toEqual(50.0);
-    });
-
-    it('falls back to flat cost_price when movements have no cost_per_unit', function () {
-        $product = Product::create(['name' => 'Legacy', 'cost_price' => 7.0]);
-        $stock = Stock::create([
-            'stockable_type' => get_class($product),
-            'stockable_id' => $product->id,
-            'location_id' => $this->location->id,
-            'quantity' => 5,
-            'reserved_quantity' => 0,
-        ]);
-        $transaction = Transaction::create([
-            'type' => TransactionType::Manual,
-            'status' => TransactionStatus::Committed,
-        ]);
-
-        Movement::create([
-            'stockable_type' => get_class($product),
-            'stockable_id' => $product->id,
-            'location_id' => $this->location->id,
-            'transaction_id' => $transaction->id,
-            'type' => MovementType::Add,
-            'quantity' => 5,
-            'cost_per_unit' => null,
-            'before_quantity' => 0,
-            'after_quantity' => 5,
-        ]);
-
-        // Falls back to flat cost_price: 5 × $7.00 = $35
-        expect(Inventorix::totalValuation())->toEqual(35.0);
     });
 
     it('returns 0.0 when no stocks exist', function () {

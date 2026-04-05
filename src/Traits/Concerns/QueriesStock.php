@@ -6,6 +6,7 @@ use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Threshold;
+use Aldeebhasan\Inventorix\Services\ValuationService;
 
 trait QueriesStock
 {
@@ -150,20 +151,12 @@ trait QueriesStock
         ];
     }
 
-    public function stockValuation(Location|int|null $location = null, string $costAttribute = 'cost_price'): float
+    public function stockValuation(Location|int|null $location = null): float
     {
-        $costPrice = (float) ($this->{$costAttribute} ?? 0);
-
-        $query = Stock::where('stockable_type', static::class)
-            ->where('stockable_id', $this->getKey());
-
-        if ($location !== null) {
-            $locationId = $location instanceof Location ? $location->id : $location;
-            $query->where('location_id', $locationId);
+        if (is_int($location)) {
+            $location = Location::find($location);
         }
 
-        $totalQuantity = (float) $query->sum('quantity');
-
-        return $totalQuantity * $costPrice;
+        return app(ValuationService::class)->totalValuation(location: $location, stockable: $this);
     }
 }
