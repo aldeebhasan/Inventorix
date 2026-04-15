@@ -3,6 +3,7 @@
 namespace Aldeebhasan\Inventorix\Services;
 
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\ReservationStatus;
@@ -18,7 +19,6 @@ use Aldeebhasan\Inventorix\Exceptions\ReservationNotFoundException;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
-use Aldeebhasan\Inventorix\Models\Transaction;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +27,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
 {
     public function __construct(
         private readonly Dispatcher $events,
-        private readonly CostingService $costing
+        private readonly StockServiceInterface $stocks,
     ) {}
 
     public function reserve(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Reservation
@@ -126,43 +126,33 @@ class ReservationService extends BaseService implements ReservationServiceInterf
             $stockable = $reservation->stockable;
             $causable = $reservation->reference;
 
-            $transaction = Transaction::create([
-                'type' => TransactionType::Sale,
-                'status' => TransactionStatus::Pending,
-                'causable_type' => $causable ? get_class($causable) : null,
-                'causable_id' => $causable?->getKey(),
-                'note' => $reservation->note,
-                'created_by' => $reservation->created_by,
-            ]);
+            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction(
+                new StockOperationDto(
+                    causable: $causable,
+                    note: $reservation->note,
+                    createdBy: $reservation->created_by,
+                ),
+                TransactionType::Sale
+            );
 
-            $stock = Stock::where('stockable_type', $reservation->stockable_type)
-                ->where('stockable_id', $reservation->stockable_id)
-                ->where('location_id', $reservation->location_id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $deductDto = new StockOperationDto(
+                transaction: $transaction,
+                causable: $causable,
+                note: $reservation->note,
+                createdBy: $reservation->created_by,
+                movementType: MovementType::Fulfillment,
+            );
 
-            $stock->decrement('quantity', $reservation->quantity);
+            $stock = $this->stocks->deduct($stockable, $reservation->quantity, $location, $deductDto);
+
             $stock->decrement('reserved_quantity', $reservation->quantity);
             $stock->refresh();
 
             $reservation->update(['status' => ReservationStatus::Fulfilled]);
 
-            $movement = $this->recordMovement([
-                'stockable_type' => $reservation->stockable_type,
-                'stockable_id' => $reservation->stockable_id,
-                'location_id' => $reservation->location_id,
-                'transaction_id' => $transaction->id,
-                'type' => MovementType::Fulfillment,
-                'quantity' => $reservation->quantity,
-                'before_quantity' => $stock->quantity + $reservation->quantity,
-                'after_quantity' => $stock->quantity,
-                'note' => $reservation->note,
-                'created_by' => $reservation->created_by,
-            ]);
-
-            $this->costing->linkSources($movement);
-
-            $transaction->update(['status' => TransactionStatus::Committed]);
+            if ($autoCreated) {
+                $transaction->update(['status' => TransactionStatus::Committed]);
+            }
 
             if ($this->shouldDispatch('ReservationFulfilled')) {
                 $this->events->dispatch(new ReservationFulfilled($reservation, $stock, $stockable, $location));

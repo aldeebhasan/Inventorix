@@ -155,15 +155,15 @@ it('adjustStock throws LocationNotFoundException for unknown location id', funct
     Inventorix::adjustStock($this->product, 10, 9999);
 })->throws(LocationNotFoundException::class);
 
-it('adjustStock records a movement of type Adjustment with correct delta', function () {
+it('adjustStock records a movement of type AdjustmentOut with correct quantity', function () {
     Inventorix::addStock($this->product, 50, $this->location);
     Inventorix::adjustStock($this->product, 30, $this->location);
 
-    $movement = Movement::where('type', MovementType::Adjustment->value)->first();
+    $movement = Movement::where('type', MovementType::AdjustmentOut->value)->first();
 
     expect($movement->before_quantity)->toEqual(50)
         ->and($movement->after_quantity)->toEqual(30)
-        ->and($movement->quantity)->toEqual(-20); // delta
+        ->and($movement->quantity)->toEqual(20); // absolute diff, always positive
 });
 
 // ---------------------------------------------------------------------------

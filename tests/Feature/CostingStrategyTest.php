@@ -65,15 +65,15 @@ describe('ValuationService::evaluate', function () {
         expect($this->valuation->evaluate(collect([$m])))->toEqual(35.0);
     });
 
-    it('includes positive Adjustment movements', function () {
-        $m = new Movement(['type' => MovementType::Adjustment, 'quantity' => 5, 'cost_per_unit' => 9.0, 'consumed_quantity' => 0]);
+    it('includes AdjustmentIn movements', function () {
+        $m = new Movement(['type' => MovementType::AdjustmentIn, 'quantity' => 5, 'cost_per_unit' => 9.0, 'consumed_quantity' => 0]);
 
         expect($this->valuation->evaluate(collect([$m])))->toEqual(45.0);
     });
 
-    it('excludes negative Adjustment movements', function () {
+    it('excludes AdjustmentOut movements', function () {
         $add = new Movement(['type' => MovementType::Add, 'quantity' => 10, 'cost_per_unit' => 5.0, 'consumed_quantity' => 0]);
-        $adj = new Movement(['type' => MovementType::Adjustment, 'quantity' => -5, 'cost_per_unit' => 5.0, 'consumed_quantity' => 0]);
+        $adj = new Movement(['type' => MovementType::AdjustmentOut, 'quantity' => 5, 'cost_per_unit' => 5.0, 'consumed_quantity' => 0]);
 
         expect($this->valuation->evaluate(collect([$add, $adj])))->toEqual(50.0);
     });
@@ -135,16 +135,18 @@ describe('cost_per_unit capture on movements', function () {
         expect((float) $transferIn->cost_per_unit)->toEqual(10.0);
     });
 
-    it('adjustStock records cost_per_unit only on positive adjustments', function () {
+    it('adjustStock records AdjustmentIn with cost and AdjustmentOut with linkSources cost', function () {
         Inventorix::addStock($this->product, 10, $this->location);
         Inventorix::adjustStock($this->product, 15, $this->location);
         Inventorix::adjustStock($this->product, 10, $this->location);
 
-        $positive = Movement::where('type', MovementType::Adjustment->value)->where('quantity', '>', 0)->first();
-        $negative = Movement::where('type', MovementType::Adjustment->value)->where('quantity', '<', 0)->first();
+        $in = Movement::where('type', MovementType::AdjustmentIn->value)->first();
+        $out = Movement::where('type', MovementType::AdjustmentOut->value)->first();
 
-        expect((float) $positive->cost_per_unit)->toEqual(10.0)
-            ->and($negative->cost_per_unit)->toBeNull();
+        // AdjustmentIn: cost_per_unit comes from stockable cost_price
+        expect((float) $in->cost_per_unit)->toEqual(10.0);
+        // AdjustmentOut: cost_per_unit is set via linkSources()
+        expect($out->cost_per_unit)->not->toBeNull();
     });
 });
 

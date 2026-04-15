@@ -14,6 +14,7 @@ use Aldeebhasan\Inventorix\Events\StockDeducted;
 use Aldeebhasan\Inventorix\Exceptions\InsufficientStockException;
 use Aldeebhasan\Inventorix\Exceptions\InvalidQuantityException;
 use Aldeebhasan\Inventorix\Models\Location;
+use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
@@ -47,7 +48,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
                 'transaction_id' => $transaction->id,
-                'type' => MovementType::Add,
+                'type' => $options->movementType ?? MovementType::Add,
                 'quantity' => $quantity,
                 'cost_per_unit' => $this->resolveCost($stockable, $options),
                 'before_quantity' => $beforeQuantity,
@@ -100,7 +101,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
                 'transaction_id' => $transaction->id,
-                'type' => MovementType::Deduct,
+                'type' => $options->movementType ?? MovementType::Deduct,
                 'quantity' => $quantity,
                 'before_quantity' => $beforeQuantity,
                 'after_quantity' => $stock->quantity,
@@ -129,38 +130,47 @@ class StockService extends BaseService implements StockServiceInterface
     public function adjust(Model $stockable, int|float $newQuantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         return DB::transaction(function () use ($stockable, $newQuantity, $location, $options) {
-            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Adjustment);
-
             $stock = $this->findOrCreateStock($stockable, $location);
             $previousQuantity = $stock->quantity;
-            $delta = $newQuantity - $previousQuantity;
 
-            $stock->update(['quantity' => $newQuantity]);
-            $stock->refresh();
+            if ($newQuantity == $previousQuantity) {
+                return $stock;
+            }
 
-            $movement = $this->recordMovement([
-                'stockable_type' => get_class($stockable),
-                'stockable_id' => $stockable->getKey(),
-                'location_id' => $location->id,
-                'transaction_id' => $transaction->id,
-                'type' => MovementType::Adjustment,
-                'quantity' => $delta,
-                'cost_per_unit' => $delta > 0 ? $this->resolveCost($stockable, $options) : null,
-                'before_quantity' => $previousQuantity,
-                'after_quantity' => $newQuantity,
-                'note' => $options->note,
-                'created_by' => $options->createdBy,
-            ]);
+            [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Adjustment);
+
+            $baseDto = new StockOperationDto(
+                transaction: $transaction,
+                transactionType: $options->transactionType,
+                causable: $options->causable,
+                reference: $options->reference,
+                cost: $options->cost,
+                note: $options->note,
+                createdBy: $options->createdBy,
+                allowNegative: true,
+                expiresAt: $options->expiresAt,
+            );
+
+            if ($newQuantity > $previousQuantity) {
+                $diff = $newQuantity - $previousQuantity;
+                $stock = $this->add($stockable, $diff, $location, $baseDto->withMovementType(MovementType::AdjustmentIn));
+            } else {
+                $diff = $previousQuantity - $newQuantity;
+                $stock = $this->deduct($stockable, $diff, $location, $baseDto->withMovementType(MovementType::AdjustmentOut));
+            }
+
+            $movement = Movement::where('transaction_id', $transaction->id)
+                ->where('location_id', $location->id)
+                ->latest('id')
+                ->first();
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);
             }
 
-            if ($this->shouldDispatch('StockAdjusted')) {
+            if ($this->shouldDispatch('StockAdjusted') && $movement) {
                 $this->events->dispatch(new StockAdjusted($stockable, $stock, $movement, $previousQuantity, $newQuantity, $location));
             }
-
-            $this->thresholds->evaluate($stockable, $stock, $location);
 
             return $stock;
         });

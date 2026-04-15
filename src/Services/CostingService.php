@@ -154,13 +154,11 @@ class CostingService
             ->where('stockable_id', $deduction->stockable_id)
             ->where('location_id', $deduction->location_id)
             ->whereNotNull('cost_per_unit')
-            ->where(function ($q) {
-                $q->whereIn('type', [MovementType::Add->value, MovementType::TransferIn->value])
-                    ->orWhere(function ($q2) {
-                        $q2->where('type', MovementType::Adjustment->value)
-                            ->where('quantity', '>', 0);
-                    });
-            })
+            ->whereIn('type', [
+                MovementType::Add->value,
+                MovementType::TransferIn->value,
+                MovementType::AdjustmentIn->value,
+            ])
             ->where('id', '<', $deduction->id);
     }
 
