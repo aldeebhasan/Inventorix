@@ -14,6 +14,7 @@ use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
 use Aldeebhasan\Inventorix\Queries\StockQueries;
 use Aldeebhasan\Inventorix\Services\CostingService;
 use Aldeebhasan\Inventorix\Services\ReservationService;
+use Aldeebhasan\Inventorix\Services\SerialService;
 use Aldeebhasan\Inventorix\Services\StockService;
 use Aldeebhasan\Inventorix\Services\ThresholdService;
 use Aldeebhasan\Inventorix\Services\TransferService;
@@ -50,6 +51,7 @@ class InventorixServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/inventorix.php', 'inventorix');
 
         $this->app->singleton(CostingService::class);
+        $this->app->singleton(SerialService::class);
         $this->app->singleton(ThresholdCache::class);
         $this->app->bind(ThresholdServiceInterface::class, ThresholdService::class);
         $this->app->bind(StockServiceInterface::class, StockService::class);

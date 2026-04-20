@@ -26,6 +26,8 @@ final readonly class StockOperationDto
         public ?\DateTimeInterface $expiresAt = null,
         /** Override the MovementType stored on the movement record. */
         public ?MovementType $movementType = null,
+        /** Serial numbers to attach (on add) or detach (on deduct). */
+        public array $serials = [],
     ) {}
 
     public function withMovementType(MovementType $type): self
@@ -41,6 +43,7 @@ final readonly class StockOperationDto
             allowNegative: $this->allowNegative,
             expiresAt: $this->expiresAt,
             movementType: $type,
+            serials: $this->serials,
         );
     }
 }

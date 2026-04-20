@@ -25,7 +25,8 @@ class StockService extends BaseService implements StockServiceInterface
     public function __construct(
         private readonly Dispatcher $events,
         private readonly ThresholdServiceInterface $thresholds,
-        private readonly CostingService $costing
+        private readonly CostingService $costing,
+        private readonly SerialService $serials,
     ) {}
 
     public function add(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
@@ -59,6 +60,8 @@ class StockService extends BaseService implements StockServiceInterface
                 'created_by' => $options->createdBy,
             ]);
 
+            $this->serials->attach($movement, $stockable, $location, $quantity, $options->serials);
+
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);
             }
@@ -85,7 +88,12 @@ class StockService extends BaseService implements StockServiceInterface
             $stock = $this->findOrCreateStock($stockable, $location);
             $allowNegative = $options->allowNegative || config('inventorix.allow_negative_stock', false);
 
-            if (! $allowNegative && $stock->available_quantity < $quantity) {
+            // Fulfillment consumes reserved stock, which is already excluded from
+            // available_quantity — check against total quantity instead.
+            $isFulfillment = ($options->movementType ?? MovementType::Deduct) === MovementType::Fulfillment;
+            $effectiveAvailable = $isFulfillment ? $stock->quantity : $stock->available_quantity;
+
+            if (! $allowNegative && $effectiveAvailable < $quantity) {
                 throw new InsufficientStockException(
                     "Insufficient stock. Available: {$stock->available_quantity}, Requested: {$quantity}."
                 );
@@ -112,6 +120,8 @@ class StockService extends BaseService implements StockServiceInterface
             ]);
 
             $this->costing->linkSources($movement);
+
+            $this->serials->detach($movement, $stockable, $location, $quantity, $options->serials);
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);

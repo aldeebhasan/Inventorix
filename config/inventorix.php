@@ -4,6 +4,7 @@ use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\MovementSource;
 use Aldeebhasan\Inventorix\Models\Reservation;
+use Aldeebhasan\Inventorix\Models\Serial;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Transaction;
 
@@ -23,6 +24,7 @@ return [
         'locations' => 'inventorix_locations',
         'reservations' => 'inventorix_reservations',
         'transactions' => 'inventorix_transactions',
+        'serials' => 'inventorix_serials',
     ],
 
     /*
@@ -38,6 +40,7 @@ return [
         'location' => Location::class,
         'reservation' => Reservation::class,
         'transaction' => Transaction::class,
+        'serial' => Serial::class,
     ],
 
     /*
@@ -129,5 +132,20 @@ return [
     | stockable model's cost attribute (cost_price by default).
     */
     'costing_strategy' => env('INVENTORIX_COSTING', 'fifo'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Serial Number Tracking
+    |--------------------------------------------------------------------------
+    | When enabled, every addStock operation automatically generates a serial
+    | number per unit added, and every deductStock operation automatically
+    | consumes the oldest available serials at that location.
+    |
+    | You may also pass explicit serial numbers via StockOperationDto::$serials
+    | to override auto-generation / auto-selection.
+    */
+    'serial_tracking' => [
+        'enabled' => env('INVENTORIX_SERIAL_TRACKING', false),
+    ],
 
 ];

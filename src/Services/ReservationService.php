@@ -28,6 +28,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
     public function __construct(
         private readonly Dispatcher $events,
         private readonly StockServiceInterface $stocks,
+        private readonly SerialService $serials,
     ) {}
 
     public function reserve(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Reservation
@@ -65,6 +66,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 'expires_at' => $expiresAt,
             ]);
 
+            $this->serials->reserveSerials($reservation, $stockable, $location, $quantity, $options->serials);
+
             if ($this->shouldDispatch('StockReserved')) {
                 $this->events->dispatch(new StockReserved($stockable, $reservation, $location));
             }
@@ -97,6 +100,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 ->firstOrFail();
 
             $stock->decrement('reserved_quantity', $reservation->quantity);
+
+            $this->serials->unreserveSerials($reservation);
 
             $reservation->update(['status' => ReservationStatus::Released]);
 
@@ -135,12 +140,15 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 TransactionType::Sale
             );
 
+            $reservedSerials = $this->serials->getReservedSerials($reservation);
+
             $deductDto = new StockOperationDto(
                 transaction: $transaction,
                 causable: $causable,
                 note: $reservation->note,
                 createdBy: $reservation->created_by,
                 movementType: MovementType::Fulfillment,
+                serials: $reservedSerials,
             );
 
             $stock = $this->stocks->deduct($stockable, $reservation->quantity, $location, $deductDto);

@@ -11,6 +11,7 @@ use Aldeebhasan\Inventorix\Traits\Concerns\ManagesThresholds;
 use Aldeebhasan\Inventorix\Traits\Concerns\ManagesTransfers;
 use Aldeebhasan\Inventorix\Traits\Concerns\QueriesStock;
 use Aldeebhasan\Inventorix\Traits\Concerns\TracksMovements;
+use Aldeebhasan\Inventorix\Traits\Concerns\TracksSerials;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -22,6 +23,7 @@ trait HasInventory
     use ManagesTransfers;
     use QueriesStock;
     use TracksMovements;
+    use TracksSerials;
 
     public function stocks(): HasMany
     {
