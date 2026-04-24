@@ -27,10 +27,7 @@ class ValuationService implements ValuationServiceInterface
                     return false;
                 }
 
-                return match ($movement->type) {
-                    MovementType::Add, MovementType::TransferIn, MovementType::AdjustmentIn => true,
-                    default => false,
-                };
+                return $movement->type === MovementType::Add;
             })
             ->sum(function ($movement) {
                 $remaining = (float) $movement->quantity - (float) $movement->consumed_quantity;
@@ -59,11 +56,7 @@ class ValuationService implements ValuationServiceInterface
     ): float {
         return (float) Movement::query()
             ->whereNotNull('cost_per_unit')
-            ->whereIn('type', [
-                MovementType::Add->value,
-                MovementType::TransferIn->value,
-                MovementType::AdjustmentIn->value,
-            ])
+            ->where('type', MovementType::Add->value)
             ->whereRaw('(quantity - COALESCE(consumed_quantity, 0)) > 0')
             ->when($location !== null, fn ($q) => $q->where('location_id', $location->id))
             ->when($stockable !== null, fn ($q) => $q

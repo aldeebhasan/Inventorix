@@ -49,7 +49,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
                 'transaction_id' => $transaction->id,
-                'type' => $options->movementType ?? MovementType::Add,
+                'type' => MovementType::Add,
                 'quantity' => $quantity,
                 'cost_per_unit' => $this->resolveCost($stockable, $options),
                 'before_quantity' => $beforeQuantity,
@@ -60,7 +60,9 @@ class StockService extends BaseService implements StockServiceInterface
                 'created_by' => $options->createdBy,
             ]);
 
-            $this->serials->attach($movement, $stockable, $location, $quantity, $options->serials);
+            if (! $options->skipSerials) {
+                $this->serials->attach($movement, $stockable, $location, $quantity, $options->serials);
+            }
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);
@@ -88,10 +90,9 @@ class StockService extends BaseService implements StockServiceInterface
             $stock = $this->findOrCreateStock($stockable, $location);
             $allowNegative = $options->allowNegative || config('inventorix.allow_negative_stock', false);
 
-            // Fulfillment consumes reserved stock, which is already excluded from
-            // available_quantity — check against total quantity instead.
-            $isFulfillment = ($options->movementType ?? MovementType::Deduct) === MovementType::Fulfillment;
-            $effectiveAvailable = $isFulfillment ? $stock->quantity : $stock->available_quantity;
+            // When deducting from reserved stock (e.g. fulfillment), reserved_quantity is already
+            // committed so we check total quantity instead of available_quantity.
+            $effectiveAvailable = $options->fromReserved ? $stock->quantity : $stock->available_quantity;
 
             if (! $allowNegative && $effectiveAvailable < $quantity) {
                 throw new InsufficientStockException(
@@ -109,7 +110,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'stockable_id' => $stockable->getKey(),
                 'location_id' => $location->id,
                 'transaction_id' => $transaction->id,
-                'type' => $options->movementType ?? MovementType::Deduct,
+                'type' => MovementType::Deduct,
                 'quantity' => $quantity,
                 'before_quantity' => $beforeQuantity,
                 'after_quantity' => $stock->quantity,
@@ -121,7 +122,9 @@ class StockService extends BaseService implements StockServiceInterface
 
             $this->costing->linkSources($movement);
 
-            $this->serials->detach($movement, $stockable, $location, $quantity, $options->serials);
+            if (! $options->skipSerials) {
+                $this->serials->detach($movement, $stockable, $location, $quantity, $options->serials);
+            }
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);
@@ -163,10 +166,10 @@ class StockService extends BaseService implements StockServiceInterface
 
             if ($newQuantity > $previousQuantity) {
                 $diff = $newQuantity - $previousQuantity;
-                $stock = $this->add($stockable, $diff, $location, $baseDto->withMovementType(MovementType::AdjustmentIn));
+                $stock = $this->add($stockable, $diff, $location, $baseDto);
             } else {
                 $diff = $previousQuantity - $newQuantity;
-                $stock = $this->deduct($stockable, $diff, $location, $baseDto->withMovementType(MovementType::AdjustmentOut));
+                $stock = $this->deduct($stockable, $diff, $location, $baseDto);
             }
 
             $movement = Movement::where('transaction_id', $transaction->id)

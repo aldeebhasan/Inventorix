@@ -213,7 +213,7 @@ describe('CostingService::linkSources — Fulfillment', function () {
         $reservation = Inventorix::reserve($this->product, 10, $this->location);
         Inventorix::fulfillReservation($reservation);
 
-        $fulfillment = Movement::where('type', MovementType::Fulfillment->value)->first();
+        $fulfillment = Movement::where('type', MovementType::Deduct->value)->first();
 
         expect(MovementSource::where('deduction_movement_id', $fulfillment->id)->count())->toBe(1)
             ->and((float) $fulfillment->cost_per_unit)->toEqual(15.0);

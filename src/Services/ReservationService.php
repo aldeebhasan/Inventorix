@@ -5,7 +5,6 @@ namespace Aldeebhasan\Inventorix\Services;
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
-use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\ReservationStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
@@ -147,8 +146,8 @@ class ReservationService extends BaseService implements ReservationServiceInterf
                 causable: $causable,
                 note: $reservation->note,
                 createdBy: $reservation->created_by,
-                movementType: MovementType::Fulfillment,
                 serials: $reservedSerials,
+                fromReserved: true,
             );
 
             $stock = $this->stocks->deduct($stockable, $reservation->quantity, $location, $deductDto);

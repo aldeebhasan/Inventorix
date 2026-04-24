@@ -3,6 +3,7 @@
 namespace Aldeebhasan\Inventorix;
 
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\RollbackServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\StockQueryInterface;
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
@@ -30,6 +31,7 @@ class Inventorix
         private readonly ValuationServiceInterface $valuation,
         private readonly ThresholdServiceInterface $thresholds,
         private readonly StockQueryInterface $queries,
+        private readonly RollbackServiceInterface $rollbacks,
     ) {}
 
     private function resolveLocation(Location|int $location): Location
@@ -130,5 +132,10 @@ class Inventorix
         $resolvedLocation = $location !== null ? $this->resolveLocation($location) : null;
 
         $this->thresholds->check($stockable, $resolvedLocation);
+    }
+
+    public function rollback(Transaction $transaction, StockOperationDto $options = new StockOperationDto): Transaction
+    {
+        return $this->rollbacks->rollback($transaction, $options);
     }
 }

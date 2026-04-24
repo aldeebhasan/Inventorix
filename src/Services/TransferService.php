@@ -5,7 +5,6 @@ namespace Aldeebhasan\Inventorix\Services;
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\TransferServiceInterface;
 use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
-use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionStatus;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Events\StockTransferred;
@@ -31,7 +30,7 @@ class TransferService extends BaseService implements TransferServiceInterface
         DB::transaction(function () use ($stockable, $quantity, $from, $to, $options) {
             [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Transfer);
 
-            $outDto = new StockOperationDto(
+            $sharedDto = new StockOperationDto(
                 transaction: $transaction,
                 transactionType: $options->transactionType,
                 causable: $options->causable,
@@ -41,11 +40,10 @@ class TransferService extends BaseService implements TransferServiceInterface
                 createdBy: $options->createdBy,
                 allowNegative: $options->allowNegative,
                 expiresAt: $options->expiresAt,
-                movementType: MovementType::TransferOut,
             );
 
-            $this->stocks->deduct($stockable, $quantity, $from, $outDto);
-            $this->stocks->add($stockable, $quantity, $to, $outDto->withMovementType(MovementType::TransferIn));
+            $this->stocks->deduct($stockable, $quantity, $from, $sharedDto);
+            $this->stocks->add($stockable, $quantity, $to, $sharedDto);
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);

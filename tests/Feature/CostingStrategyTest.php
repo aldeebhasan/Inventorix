@@ -59,26 +59,13 @@ describe('ValuationService::evaluate', function () {
         expect($this->valuation->evaluate(collect([$m1, $m2])))->toEqual(94.0);
     });
 
-    it('includes TransferIn movements', function () {
-        $m = new Movement(['type' => MovementType::TransferIn, 'quantity' => 5, 'cost_per_unit' => 7.0, 'consumed_quantity' => 0]);
+    it('includes only Add movements (transfers and adjustments now both record as Add)', function () {
+        $m = new Movement(['type' => MovementType::Add, 'quantity' => 5, 'cost_per_unit' => 7.0, 'consumed_quantity' => 0]);
 
         expect($this->valuation->evaluate(collect([$m])))->toEqual(35.0);
     });
 
-    it('includes AdjustmentIn movements', function () {
-        $m = new Movement(['type' => MovementType::AdjustmentIn, 'quantity' => 5, 'cost_per_unit' => 9.0, 'consumed_quantity' => 0]);
-
-        expect($this->valuation->evaluate(collect([$m])))->toEqual(45.0);
-    });
-
-    it('excludes AdjustmentOut movements', function () {
-        $add = new Movement(['type' => MovementType::Add, 'quantity' => 10, 'cost_per_unit' => 5.0, 'consumed_quantity' => 0]);
-        $adj = new Movement(['type' => MovementType::AdjustmentOut, 'quantity' => 5, 'cost_per_unit' => 5.0, 'consumed_quantity' => 0]);
-
-        expect($this->valuation->evaluate(collect([$add, $adj])))->toEqual(50.0);
-    });
-
-    it('excludes Deduct movements', function () {
+    it('excludes Deduct movements (outbound — transfers, adjustments, fulfillments all use Deduct)', function () {
         $add = new Movement(['type' => MovementType::Add, 'quantity' => 10, 'cost_per_unit' => 5.0, 'consumed_quantity' => 5]);
         $deduct = new Movement(['type' => MovementType::Deduct, 'quantity' => 5, 'cost_per_unit' => 5.0, 'consumed_quantity' => 0]);
 
@@ -126,26 +113,27 @@ describe('cost_per_unit capture on movements', function () {
         expect($movement->cost_per_unit)->toBeNull();
     });
 
-    it('transfer records cost_per_unit on the TransferIn movement', function () {
+    it('transfer records cost_per_unit on the Add movement at the destination', function () {
         $locationB = Location::create(['name' => 'Warehouse B', 'code' => 'WH-B', 'is_active' => true]);
         Inventorix::addStock($this->product, 10, $this->location);
         Inventorix::transfer($this->product, 5, $this->location, $locationB);
 
-        $transferIn = Movement::where('type', MovementType::TransferIn->value)->first();
-        expect((float) $transferIn->cost_per_unit)->toEqual(10.0);
+        $addAtDest = Movement::where('type', MovementType::Add->value)->where('location_id', $locationB->id)->first();
+        expect((float) $addAtDest->cost_per_unit)->toEqual(10.0);
     });
 
-    it('adjustStock records AdjustmentIn with cost and AdjustmentOut with linkSources cost', function () {
+    it('adjustStock records Add with cost and Deduct with linkSources cost', function () {
         Inventorix::addStock($this->product, 10, $this->location);
-        Inventorix::adjustStock($this->product, 15, $this->location);
-        Inventorix::adjustStock($this->product, 10, $this->location);
+        Inventorix::adjustStock($this->product, 15, $this->location);  // adds 5 → second Add
+        Inventorix::adjustStock($this->product, 10, $this->location);  // deducts 5 → first Deduct
 
-        $in = Movement::where('type', MovementType::AdjustmentIn->value)->first();
-        $out = Movement::where('type', MovementType::AdjustmentOut->value)->first();
+        // Second Add movement (after the initial addStock)
+        $in = Movement::where('type', MovementType::Add->value)->orderBy('id')->skip(1)->first();
+        $out = Movement::where('type', MovementType::Deduct->value)->first();
 
-        // AdjustmentIn: cost_per_unit comes from stockable cost_price
+        // Add from adjustment: cost_per_unit comes from stockable cost_price
         expect((float) $in->cost_per_unit)->toEqual(10.0);
-        // AdjustmentOut: cost_per_unit is set via linkSources()
+        // Deduct from adjustment: cost_per_unit is set via linkSources()
         expect($out->cost_per_unit)->not->toBeNull();
     });
 });

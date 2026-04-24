@@ -18,6 +18,8 @@ return new class extends Migration
             $table->nullableMorphs('causable');
             $table->text('note')->nullable();
             $table->unsignedBigInteger('created_by')->nullable()->index();
+            $table->unsignedBigInteger('reversed_by_transaction_id')->nullable()->index()->after('status');
+            $table->timestamp('reversed_at')->nullable()->after('reversed_by_transaction_id');
             $table->timestamps();
         });
     }

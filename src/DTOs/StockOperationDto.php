@@ -2,7 +2,6 @@
 
 namespace Aldeebhasan\Inventorix\DTOs;
 
-use Aldeebhasan\Inventorix\Enums\MovementType;
 use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Models\Transaction;
 use Illuminate\Database\Eloquent\Model;
@@ -24,26 +23,18 @@ final readonly class StockOperationDto
         public ?int $createdBy = null,
         public bool $allowNegative = false,
         public ?\DateTimeInterface $expiresAt = null,
-        /** Override the MovementType stored on the movement record. */
-        public ?MovementType $movementType = null,
         /** Serial numbers to attach (on add) or detach (on deduct). */
         public array $serials = [],
+        /**
+         * When true the deduction is satisfied from reserved stock, so the
+         * available-quantity check uses total quantity rather than available_quantity.
+         * Used by ReservationService::fulfill().
+         */
+        public bool $fromReserved = false,
+        /**
+         * When true StockService skips the serial attach/detach step entirely.
+         * Used by RollbackService, which manages serial compensation directly.
+         */
+        public bool $skipSerials = false,
     ) {}
-
-    public function withMovementType(MovementType $type): self
-    {
-        return new self(
-            transaction: $this->transaction,
-            transactionType: $this->transactionType,
-            causable: $this->causable,
-            reference: $this->reference,
-            cost: $this->cost,
-            note: $this->note,
-            createdBy: $this->createdBy,
-            allowNegative: $this->allowNegative,
-            expiresAt: $this->expiresAt,
-            movementType: $type,
-            serials: $this->serials,
-        );
-    }
 }

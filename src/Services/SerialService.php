@@ -209,6 +209,40 @@ class SerialService
             ->all();
     }
 
+    /**
+     * Rollback an inbound (Add) movement: delete serials that were created by it
+     * and are still Available. Called by RollbackService when reversing an Add.
+     */
+    public function rollbackAttach(Movement $originalInbound): void
+    {
+        if (! config('inventorix.serial_tracking.enabled', false)) {
+            return;
+        }
+
+        Serial::where('movement_id', $originalInbound->id)
+            ->where('status', SerialStatus::Available->value)
+            ->delete();
+    }
+
+    /**
+     * Rollback an outbound (Deduct) movement: restore serials that were marked Sold
+     * by it back to Available. Called by RollbackService when reversing a Deduct.
+     */
+    public function rollbackDetach(Movement $originalDeduct): void
+    {
+        if (! config('inventorix.serial_tracking.enabled', false)) {
+            return;
+        }
+
+        Serial::where('movement_id', $originalDeduct->id)
+            ->where('status', SerialStatus::Sold->value)
+            ->update([
+                'status' => SerialStatus::Available->value,
+                'movement_id' => null,
+                'updated_at' => now(),
+            ]);
+    }
+
     private function generateSerials(int $count): array
     {
         return array_map(fn () => (string) Str::ulid(), range(1, $count));

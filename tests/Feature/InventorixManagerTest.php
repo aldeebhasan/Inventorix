@@ -155,11 +155,11 @@ it('adjustStock throws LocationNotFoundException for unknown location id', funct
     Inventorix::adjustStock($this->product, 10, 9999);
 })->throws(LocationNotFoundException::class);
 
-it('adjustStock records a movement of type AdjustmentOut with correct quantity', function () {
+it('adjustStock records a movement of type Deduct with correct quantity', function () {
     Inventorix::addStock($this->product, 50, $this->location);
     Inventorix::adjustStock($this->product, 30, $this->location);
 
-    $movement = Movement::where('type', MovementType::AdjustmentOut->value)->first();
+    $movement = Movement::where('type', MovementType::Deduct->value)->first();
 
     expect($movement->before_quantity)->toEqual(50)
         ->and($movement->after_quantity)->toEqual(30)
@@ -213,14 +213,14 @@ it('transfer throws LocationNotFoundException for unknown source location', func
     Inventorix::transfer($this->product, 10, 9999, $locationB);
 })->throws(LocationNotFoundException::class);
 
-it('transfer records TransferOut and TransferIn movements linked to same Transaction', function () {
+it('transfer records Deduct and Add movements linked to same Transaction', function () {
     $locationB = Location::create(['name' => 'Warehouse B', 'code' => 'WH-B', 'is_active' => true]);
 
     Inventorix::addStock($this->product, 100, $this->location);
     Inventorix::transfer($this->product, 40, $this->location, $locationB);
 
-    $out = Movement::where('type', MovementType::TransferOut->value)->first();
-    $in = Movement::where('type', MovementType::TransferIn->value)->first();
+    $out = Movement::where('type', MovementType::Deduct->value)->where('location_id', $this->location->id)->first();
+    $in = Movement::where('type', MovementType::Add->value)->where('location_id', $locationB->id)->first();
 
     expect($out)->not->toBeNull()
         ->and($in)->not->toBeNull()

@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static Collection lowStockItems(Location|int|null $location = null, ?string $stockableType = null)
  * @method static float totalValuation(Location|int|null $location = null, ?Model $stockable = null, string $costAttribute = 'cost_price')
  * @method static void checkThresholds(Model $stockable, Location|int|null $location = null)
+ * @method static Transaction rollback(Transaction $transaction, StockOperationDto $options = null)
  */
 class Inventorix extends Facade
 {

@@ -9,4 +9,5 @@ enum TransactionType: string
     case Transfer = 'transfer';
     case Adjustment = 'adjustment';
     case Manual = 'manual';
+    case Reversal = 'reversal';
 }

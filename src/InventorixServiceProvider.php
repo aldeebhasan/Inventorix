@@ -6,6 +6,7 @@ use Aldeebhasan\Inventorix\Commands\ExpireReservationsCommand;
 use Aldeebhasan\Inventorix\Commands\PruneMovementsCommand;
 use Aldeebhasan\Inventorix\Commands\StockReportCommand;
 use Aldeebhasan\Inventorix\Contracts\ReservationServiceInterface;
+use Aldeebhasan\Inventorix\Contracts\RollbackServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\StockQueryInterface;
 use Aldeebhasan\Inventorix\Contracts\StockServiceInterface;
 use Aldeebhasan\Inventorix\Contracts\ThresholdServiceInterface;
@@ -14,6 +15,7 @@ use Aldeebhasan\Inventorix\Contracts\ValuationServiceInterface;
 use Aldeebhasan\Inventorix\Queries\StockQueries;
 use Aldeebhasan\Inventorix\Services\CostingService;
 use Aldeebhasan\Inventorix\Services\ReservationService;
+use Aldeebhasan\Inventorix\Services\RollbackService;
 use Aldeebhasan\Inventorix\Services\SerialService;
 use Aldeebhasan\Inventorix\Services\StockService;
 use Aldeebhasan\Inventorix\Services\ThresholdService;
@@ -59,6 +61,7 @@ class InventorixServiceProvider extends ServiceProvider
         $this->app->bind(ReservationServiceInterface::class, ReservationService::class);
         $this->app->bind(StockQueryInterface::class, StockQueries::class);
         $this->app->singleton(ValuationServiceInterface::class, ValuationService::class);
+        $this->app->bind(RollbackServiceInterface::class, RollbackService::class);
 
         $this->app->singleton(Inventorix::class, function ($app) {
             return new Inventorix(
@@ -68,6 +71,7 @@ class InventorixServiceProvider extends ServiceProvider
                 $app->make(ValuationServiceInterface::class),
                 $app->make(ThresholdServiceInterface::class),
                 $app->make(StockQueryInterface::class),
+                $app->make(RollbackServiceInterface::class),
             );
         });
     }
