@@ -36,5 +36,9 @@ final readonly class StockOperationDto
          * Used by RollbackService, which manages serial compensation directly.
          */
         public bool $skipSerials = false,
+        public ?string $lotReference = null,
+        public ?string $unitCode = null,
+        public ?string $externalReference = null,
+        public ?string $reasonCode = null,
     ) {}
 }

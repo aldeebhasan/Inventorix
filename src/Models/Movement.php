@@ -28,6 +28,10 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int|null $created_by
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $lot_reference
+ * @property Carbon|null $expires_at
+ * @property string|null $unit_code
+ * @property string|null $external_reference
  */
 class Movement extends Model
 {
@@ -47,6 +51,9 @@ class Movement extends Model
         'note',
         'created_by',
         'created_at',
+        'lot_reference',
+        'expires_at',
+        'external_reference',
     ];
 
     protected $casts = [
@@ -56,6 +63,7 @@ class Movement extends Model
         'cost_per_unit' => 'decimal:4',
         'before_quantity' => 'decimal:4',
         'after_quantity' => 'decimal:4',
+        'expires_at' => 'date',
     ];
 
     public function getTable(): string

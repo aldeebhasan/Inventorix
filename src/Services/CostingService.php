@@ -63,17 +63,28 @@ class CostingService
     /**
      * FIFO / LIFO: fetch only lots that still have remaining stock (DB-filtered), ordered by
      * strategy direction, then consume them sequentially until the deduction is satisfied.
+     * FEFO: consume the nearest-expiry lot first. Lots with no expires_at are treated
+     *  as last resort (null-last ordering). Falls back to created_at / id for ties.
      */
     private function linkSequentialSources(Movement $deduction, CostingStrategy $strategy): void
     {
-        $order = $strategy === CostingStrategy::Lifo ? 'desc' : 'asc';
-        /** @var Collection<Movement> $inbound */
-        $inbound = $this->inboundQuery($deduction)
-            ->whereRaw('quantity > consumed_quantity')
-            ->orderBy('created_at', $order)
-            ->orderBy('id', $order)
-            ->get();
+        $inboundQuery = $this->inboundQuery($deduction)
+            ->whereRaw('quantity > consumed_quantity');
+        if ($strategy === CostingStrategy::Fefo) {
+            $inboundQuery
+                ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END ASC')
+                ->orderBy('expires_at')
+                ->orderBy('created_at')
+                ->orderBy('id');
+        } else {
+            $order = $strategy === CostingStrategy::Lifo ? 'desc' : 'asc';
+            $inboundQuery
+                ->orderBy('created_at', $order)
+                ->orderBy('id', $order);
 
+        }
+        /** @var Collection<Movement> $inbound */
+        $inbound = $inboundQuery->get();
         if ($inbound->isEmpty()) {
             return;
         }

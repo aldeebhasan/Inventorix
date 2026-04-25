@@ -58,6 +58,9 @@ class StockService extends BaseService implements StockServiceInterface
                 'reference_id' => $options->reference?->getKey(),
                 'note' => $options->note,
                 'created_by' => $options->createdBy,
+                'lot_reference' => $options->lotReference,
+                'expires_at' => $options->expiresAt instanceof \DateTimeInterface ? $options->expiresAt->format('Y-m-d') : null,
+                'external_reference' => $options->externalReference,
             ]);
 
             if (! $options->skipSerials) {
@@ -118,6 +121,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'reference_id' => $options->reference?->getKey(),
                 'note' => $options->note,
                 'created_by' => $options->createdBy,
+                'external_reference' => $options->externalReference,
             ]);
 
             $this->costing->linkSources($movement);

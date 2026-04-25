@@ -7,6 +7,7 @@ enum CostingStrategy: string
     case Fifo = 'fifo';
     case Lifo = 'lifo';
     case Average = 'average';
+    case Fefo = 'fefo';
 
     public static function fromConfig(): self
     {

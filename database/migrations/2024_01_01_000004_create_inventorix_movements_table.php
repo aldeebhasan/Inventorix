@@ -22,6 +22,9 @@ return new class extends Migration
             $table->decimal('before_quantity', 15, 4);
             $table->decimal('after_quantity', 15, 4);
             $table->decimal('cost_per_unit', 15, 4)->nullable();
+            $table->string('lot_reference', 100)->nullable();
+            $table->date('expires_at')->nullable();
+            $table->string('external_reference', 150)->nullable();
             $table->decimal('consumed_quantity', 15, 4)->default(0)->after('quantity');
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
@@ -32,6 +35,9 @@ return new class extends Migration
             $table->index('location_id');
             $table->index('transaction_id');
             $table->index('created_at');
+            $table->index('lot_reference');
+            $table->index('expires_at');
+            $table->index('external_reference');
         });
     }
 
