@@ -3,6 +3,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aldeebhasan/inventorix.svg?style=flat-square)](https://packagist.org/packages/aldeebhasan/inventorix)
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/aldeebhasan/inventorix/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aldeebhasan/inventorix/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/aldeebhasan/inventorix/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/aldeebhasan/inventorix/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/dfa531de17724ac787b23634fc652051)](https://app.codacy.com/gh/aldeebhasan/Inventorix/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Total Downloads](https://img.shields.io/packagist/dt/aldeebhasan/inventorix.svg?style=flat-square)](https://packagist.org/packages/aldeebhasan/inventorix)
 
 This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
