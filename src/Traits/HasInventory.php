@@ -2,6 +2,7 @@
 
 namespace Aldeebhasan\Inventorix\Traits;
 
+use Aldeebhasan\Inventorix\Enums\CostingStrategy;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
@@ -15,6 +16,9 @@ use Aldeebhasan\Inventorix\Traits\Concerns\TracksSerials;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @method CostingStrategy inventorixCostingStrategy()
+ */
 trait HasInventory
 {
     use ManagesReservations;
