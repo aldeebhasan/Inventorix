@@ -72,7 +72,7 @@ class StockService extends BaseService implements StockServiceInterface
             }
 
             if ($this->shouldDispatch('StockAdded')) {
-                $this->events->dispatch(new StockAdded($stockable, $stock, $movement, $quantity, $location));
+                $this->events->dispatch(new StockAdded($stockable, $stock, $location, $movement, $quantity, $options->causable, $options->externalReference));
             }
 
             $this->thresholds->evaluate($stockable, $stock, $location);
@@ -135,7 +135,7 @@ class StockService extends BaseService implements StockServiceInterface
             }
 
             if ($this->shouldDispatch('StockDeducted')) {
-                $this->events->dispatch(new StockDeducted($stockable, $stock, $movement, $quantity, $location));
+                $this->events->dispatch(new StockDeducted($stockable, $stock, $location, $movement, $quantity, $options->causable, $options->externalReference));
             }
 
             $this->thresholds->evaluate($stockable, $stock, $location);
@@ -186,7 +186,7 @@ class StockService extends BaseService implements StockServiceInterface
             }
 
             if ($this->shouldDispatch('StockAdjusted') && $movement) {
-                $this->events->dispatch(new StockAdjusted($stockable, $stock, $movement, $previousQuantity, $newQuantity, $location));
+                $this->events->dispatch(new StockAdjusted($stockable, $stock, $location, $movement, $previousQuantity, $newQuantity, $options->causable, $options->externalReference));
             }
 
             return $stock;

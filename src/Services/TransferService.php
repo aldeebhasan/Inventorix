@@ -50,7 +50,7 @@ class TransferService extends BaseService implements TransferServiceInterface
             }
 
             if ($this->shouldDispatch('StockTransferred')) {
-                $this->events->dispatch(new StockTransferred($stockable, $quantity, $from, $to, $transaction));
+                $this->events->dispatch(new StockTransferred($stockable, $quantity, $from, $to, $transaction, $options->causable, $options->externalReference));
             }
         });
 

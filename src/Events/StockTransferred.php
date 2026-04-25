@@ -14,5 +14,7 @@ readonly class StockTransferred implements ShouldDispatchAfterCommit
         public Location $fromLocation,
         public Location $toLocation,
         public Transaction $transaction,
+        public mixed $causable = null,
+        public ?string $externalReference = null,
     ) {}
 }

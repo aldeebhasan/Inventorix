@@ -12,8 +12,10 @@ readonly class StockAdded implements ShouldDispatchAfterCommit
     public function __construct(
         public mixed $stockable,
         public Stock $stock,
+        public Location $location,
         public Movement $movement,
         public int|float $quantity,
-        public Location $location,
+        public mixed $causable = null,
+        public ?string $externalReference = null,
     ) {}
 }
