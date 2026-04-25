@@ -9,6 +9,7 @@ use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Transaction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Facade;
 
@@ -28,6 +29,11 @@ use Illuminate\Support\Facades\Facade;
  * @method static float totalValuation(Location|int|null $location = null, ?Model $stockable = null, string $costAttribute = 'cost_price')
  * @method static void checkThresholds(Model $stockable, Location|int|null $location = null)
  * @method static Transaction rollback(Transaction $transaction, StockOperationDto $options = null)
+ * @method static Builder movementsByCausable(Model $causable, array $filters = [])
+ * @method static float valuationByCausable(Model $causable)
+ * @method static float stockVelocity(Model $stockable, Location|int $location, int $days = 30)
+ * @method static float daysOfStock(Model $stockable, Location|int $location, int $velocityDays = 30)
+ * @method static Carbon|null peakDemandDay(Model $stockable, Location|int $location, int $days = 90)
  */
 class Inventorix extends Facade
 {

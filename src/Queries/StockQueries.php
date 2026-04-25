@@ -17,30 +17,7 @@ class StockQueries implements StockQueryInterface
         $query = Movement::where('stockable_type', get_class($stockable))
             ->where('stockable_id', $stockable->getKey());
 
-        if (isset($filters['location'])) {
-            $location = $filters['location'];
-            $locationId = $location instanceof Location ? $location->id : $location;
-            $query->where('location_id', $locationId);
-        }
-
-        if (isset($filters['type'])) {
-            $type = $filters['type'];
-            if (is_array($type)) {
-                $query->whereIn('type', $type);
-            } else {
-                $query->where('type', $type);
-            }
-        }
-
-        if (isset($filters['from'])) {
-            $query->where('created_at', '>=', $filters['from']);
-        }
-
-        if (isset($filters['to'])) {
-            $query->where('created_at', '<=', $filters['to']);
-        }
-
-        return $query;
+        return $this->commonFilterQuery($query, $filters);
     }
 
     public function lowStockItems(?Location $location = null, ?string $stockableType = null, bool $includeChildren = false): Collection
@@ -72,5 +49,45 @@ class StockQueries implements StockQueryInterface
         }
 
         return $query->get();
+    }
+
+    public function movementsByCausable(Model $causable, array $filters = []): Builder
+    {
+        $query = Movement::whereHas('transaction', function ($q) use ($causable) {
+            $q->where('causable_type', get_class($causable))
+                ->where('causable_id', $causable->getKey());
+        });
+
+        return $this->commonFilterQuery($query, $filters);
+    }
+
+    private function commonFilterQuery(Builder $query, array $filters): Builder
+    {
+
+        if (isset($filters['location'])) {
+            $location = $filters['location'];
+            $locationId = $location instanceof Location ? $location->id : $location;
+            $query->where('location_id', $locationId);
+        }
+
+        if (isset($filters['type'])) {
+            $type = $filters['type'];
+            if (is_array($type)) {
+                $query->whereIn('type', $type);
+            } else {
+                $query->where('type', $type);
+            }
+        }
+
+        if (isset($filters['from'])) {
+            $query->where('created_at', '>=', $filters['from']);
+        }
+
+        if (isset($filters['to'])) {
+            $query->where('created_at', '<=', $filters['to']);
+        }
+
+        return $query;
+
     }
 }

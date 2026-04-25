@@ -17,8 +17,10 @@ use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Transaction;
+use Aldeebhasan\Inventorix\Queries\StockVelocityQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +34,7 @@ class Inventorix
         private readonly ThresholdServiceInterface $thresholds,
         private readonly StockQueryInterface $queries,
         private readonly RollbackServiceInterface $rollbacks,
+        private readonly StockVelocityQuery $velocity,
     ) {}
 
     private function resolveLocation(Location|int $location): Location
@@ -137,5 +140,30 @@ class Inventorix
     public function rollback(Transaction $transaction, StockOperationDto $options = new StockOperationDto): Transaction
     {
         return $this->rollbacks->rollback($transaction, $options);
+    }
+
+    public function movementsByCausable(Model $causable, array $filters = []): Builder
+    {
+        return $this->queries->movementsByCausable($causable, $filters);
+    }
+
+    public function valuationByCausable(Model $causable): float
+    {
+        return $this->valuation->valuationByCausable($causable);
+    }
+
+    public function stockVelocity(Model $stockable, Location|int $location, int $days = 30): float
+    {
+        return $this->velocity->velocity($stockable, $this->resolveLocation($location), $days);
+    }
+
+    public function daysOfStock(Model $stockable, Location|int $location, int $velocityDays = 30): float
+    {
+        return $this->velocity->daysOfStock($stockable, $this->resolveLocation($location), $velocityDays);
+    }
+
+    public function peakDemandDay(Model $stockable, Location|int $location, int $days = 90): ?Carbon
+    {
+        return $this->velocity->peakDemandDay($stockable, $this->resolveLocation($location), $days);
     }
 }

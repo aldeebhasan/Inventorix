@@ -65,4 +65,15 @@ class ValuationService implements ValuationServiceInterface
             )
             ->sum(DB::raw('(quantity - COALESCE(consumed_quantity, 0)) * cost_per_unit'));
     }
+
+    public function valuationByCausable(Model $causable): float
+    {
+        return (float) Movement::whereHas('transaction', function ($q) use ($causable) {
+            $q->where('causable_type', get_class($causable))
+                ->where('causable_id', $causable->getKey());
+        })
+            ->where('type', MovementType::Add->value)
+            ->whereNotNull('cost_per_unit')
+            ->sum(DB::raw('quantity * cost_per_unit'));
+    }
 }

@@ -6,7 +6,9 @@ use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Threshold;
+use Aldeebhasan\Inventorix\Queries\StockVelocityQuery;
 use Aldeebhasan\Inventorix\Services\ValuationService;
+use Illuminate\Support\Carbon;
 
 trait QueriesStock
 {
@@ -158,5 +160,20 @@ trait QueriesStock
         }
 
         return app(ValuationService::class)->totalValuation(location: $location, stockable: $this);
+    }
+
+    public function stockVelocity(Location $location, int $days = 30): float
+    {
+        return app(StockVelocityQuery::class)->velocity($this, $location, $days);
+    }
+
+    public function daysOfStock(Location $location, int $velocityDays = 30): float
+    {
+        return app(StockVelocityQuery::class)->daysOfStock($this, $location, $velocityDays);
+    }
+
+    public function peakDemandDay(Location $location, int $days = 90): ?Carbon
+    {
+        return app(StockVelocityQuery::class)->peakDemandDay($this, $location, $days);
     }
 }
