@@ -18,6 +18,7 @@ use Aldeebhasan\Inventorix\Models\Reservation;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Transaction;
 use Aldeebhasan\Inventorix\Queries\StockVelocityQuery;
+use Aldeebhasan\Inventorix\Support\HookRegistry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -35,6 +36,7 @@ class Inventorix
         private readonly StockQueryInterface $queries,
         private readonly RollbackServiceInterface $rollbacks,
         private readonly StockVelocityQuery $velocity,
+        private readonly HookRegistry $hooks,
     ) {}
 
     private function resolveLocation(Location|int $location): Location
@@ -135,6 +137,26 @@ class Inventorix
         $resolvedLocation = $location !== null ? $this->resolveLocation($location) : null;
 
         $this->thresholds->check($stockable, $resolvedLocation);
+    }
+
+    public function beforeAdd(callable $hook): void
+    {
+        $this->hooks->register('beforeAdd', $hook);
+    }
+
+    public function afterAdd(callable $hook): void
+    {
+        $this->hooks->register('afterAdd', $hook);
+    }
+
+    public function beforeDeduct(callable $hook): void
+    {
+        $this->hooks->register('beforeDeduct', $hook);
+    }
+
+    public function afterDeduct(callable $hook): void
+    {
+        $this->hooks->register('afterDeduct', $hook);
     }
 
     public function rollback(Transaction $transaction, StockOperationDto $options = new StockOperationDto): Transaction

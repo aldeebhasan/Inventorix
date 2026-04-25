@@ -22,6 +22,7 @@ use Aldeebhasan\Inventorix\Services\StockService;
 use Aldeebhasan\Inventorix\Services\ThresholdService;
 use Aldeebhasan\Inventorix\Services\TransferService;
 use Aldeebhasan\Inventorix\Services\ValuationService;
+use Aldeebhasan\Inventorix\Support\HookRegistry;
 use Aldeebhasan\Inventorix\Support\ThresholdCache;
 use Illuminate\Support\ServiceProvider;
 
@@ -53,6 +54,7 @@ class InventorixServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/inventorix.php', 'inventorix');
 
+        $this->app->singleton(HookRegistry::class);
         $this->app->singleton(CostingService::class);
         $this->app->singleton(SerialService::class);
         $this->app->singleton(ThresholdCache::class);
@@ -75,6 +77,7 @@ class InventorixServiceProvider extends ServiceProvider
                 $app->make(StockQueryInterface::class),
                 $app->make(RollbackServiceInterface::class),
                 $app->make(StockVelocityQuery::class),
+                $app->make(HookRegistry::class),
             );
         });
     }

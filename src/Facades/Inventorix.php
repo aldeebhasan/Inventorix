@@ -34,6 +34,10 @@ use Illuminate\Support\Facades\Facade;
  * @method static float stockVelocity(Model $stockable, Location|int $location, int $days = 30)
  * @method static float daysOfStock(Model $stockable, Location|int $location, int $velocityDays = 30)
  * @method static Carbon|null peakDemandDay(Model $stockable, Location|int $location, int $days = 90)
+ * @method static void beforeAdd(callable $hook)
+ * @method static void afterAdd(callable $hook)
+ * @method static void beforeDeduct(callable $hook)
+ * @method static void afterDeduct(callable $hook)
  */
 class Inventorix extends Facade
 {

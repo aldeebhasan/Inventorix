@@ -16,6 +16,7 @@ use Aldeebhasan\Inventorix\Exceptions\InvalidQuantityException;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
+use Aldeebhasan\Inventorix\Support\HookRegistry;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,7 @@ class StockService extends BaseService implements StockServiceInterface
         private readonly ThresholdServiceInterface $thresholds,
         private readonly CostingService $costing,
         private readonly SerialService $serials,
+        private readonly HookRegistry $hooks,
     ) {}
 
     public function add(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
@@ -40,6 +42,8 @@ class StockService extends BaseService implements StockServiceInterface
 
             $stock = $this->findOrCreateStock($stockable, $location);
             $beforeQuantity = $stock->quantity;
+
+            $this->hooks->run('beforeAdd', $stockable, $location, $quantity, $options);
 
             $stock->increment('quantity', $quantity);
             $stock->refresh();
@@ -66,6 +70,8 @@ class StockService extends BaseService implements StockServiceInterface
             if (! $options->skipSerials) {
                 $this->serials->attach($movement, $stockable, $location, $quantity, $options->serials);
             }
+
+            $this->hooks->run('afterAdd', $stock, $movement);
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);
@@ -105,6 +111,8 @@ class StockService extends BaseService implements StockServiceInterface
 
             $beforeQuantity = $stock->quantity;
 
+            $this->hooks->run('beforeDeduct', $stockable, $location, $quantity, $options);
+
             $stock->decrement('quantity', $quantity);
             $stock->refresh();
 
@@ -129,6 +137,8 @@ class StockService extends BaseService implements StockServiceInterface
             if (! $options->skipSerials) {
                 $this->serials->detach($movement, $stockable, $location, $quantity, $options->serials);
             }
+
+            $this->hooks->run('afterDeduct', $stock, $movement);
 
             if ($autoCreated) {
                 $transaction->update(['status' => TransactionStatus::Committed]);

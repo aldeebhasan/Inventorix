@@ -20,13 +20,24 @@ class CostingService
      */
     public function linkSources(Movement $deduction): void
     {
-        $strategy = CostingStrategy::fromConfig();
+        $strategy = $this->resolveStrategy($deduction);
 
         if ($strategy === CostingStrategy::Average) {
             $this->linkAverageSources($deduction);
         } else {
             $this->linkSequentialSources($deduction, $strategy);
         }
+    }
+
+    private function resolveStrategy(Movement $deduction): CostingStrategy
+    {
+        $stockable = $deduction->stockable;
+
+        if ($stockable !== null && method_exists($stockable, 'inventorixCostingStrategy')) {
+            return $stockable->inventorixCostingStrategy();
+        }
+
+        return CostingStrategy::fromConfig();
     }
 
     /**
