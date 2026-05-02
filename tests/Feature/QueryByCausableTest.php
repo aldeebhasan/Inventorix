@@ -107,7 +107,7 @@ it('excludes deduct movements from valuation', function () {
 });
 
 it('returns 0.0 when causable has no costed movements', function () {
-    Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(causable: $this->causable, cost: null));
+    Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(causable: $this->causable, cost: 0));
 
     expect(Inventorix::valuationByCausable($this->causable))->toEqual(0.0);
 });

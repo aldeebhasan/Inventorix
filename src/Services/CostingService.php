@@ -81,6 +81,7 @@ class CostingService
     {
         $inboundQuery = $this->inboundQuery($deduction)
             ->whereRaw('quantity > consumed_quantity');
+
         if ($strategy === CostingStrategy::Fefo) {
             $inboundQuery
                 ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END ASC')
@@ -92,14 +93,80 @@ class CostingService
             $inboundQuery
                 ->orderBy('created_at', $order)
                 ->orderBy('id', $order);
-
         }
+
         /** @var Collection<Movement> $inbound */
         $inbound = $inboundQuery->get();
+
         if ($inbound->isEmpty()) {
             return;
         }
 
+        [$sources, $costMap] = $this->buildSequentialSources($deduction, $inbound);
+
+        $this->persistSources($deduction, $sources, $costMap);
+    }
+
+    /**
+     * AVERAGE: compute the weighted average cost across all lots with remaining stock,
+     * then consume lots sequentially (oldest-first) for the audit trail.
+     *
+     * Proportional spreading is deliberately avoided: it creates fractional
+     * consumed_quantity values that break integer-quantity businesses and accumulate
+     * rounding drift over time. Sequential consumption is fraction-free — each lot
+     * gives up whole (or exact float) units — while the cost_per_unit on the
+     * deduction still reflects the true weighted average across all available stock.
+     */
+    private function linkAverageSources(Movement $deduction): void
+    {
+        /** @var Collection<Movement> $inbound */
+        $inbound = $this->inboundQuery($deduction)
+            ->whereRaw('quantity > consumed_quantity')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        if ($inbound->isEmpty()) {
+            return;
+        }
+
+        // Weighted average cost from ALL available lots — not just the ones consumed.
+        $totalAvailableQty = 0.0;
+        $totalAvailableCost = 0.0;
+        foreach ($inbound as $m) {
+            $lotRemaining = (float) $m->quantity - (float) $m->consumed_quantity;
+            $totalAvailableQty += $lotRemaining;
+            $totalAvailableCost += $lotRemaining * (float) $m->cost_per_unit;
+        }
+
+        if ($totalAvailableQty <= 0.0) {
+            return;
+        }
+
+        $avgCostPerUnit = $totalAvailableCost / $totalAvailableQty;
+
+        // Cost map uses the same average for every lot so persistSources derives
+        // the correct cost_per_unit on the deduction without extra logic.
+        [$sources, $costMap] = $this->buildSequentialSources($deduction, $inbound, $avgCostPerUnit);
+
+        $this->persistSources($deduction, $sources, $costMap);
+    }
+
+    /**
+     * Consume $inbound lots sequentially until the deduction quantity is satisfied.
+     * Returns [$sources, $costMap] ready for persistSources().
+     *
+     * When $overrideCostPerUnit is provided (average strategy) every entry in the
+     * cost map gets that value instead of the lot's own cost_per_unit.
+     *
+     * @param  Collection<Movement>  $inbound
+     * @return array{array<int, array{deduction_movement_id: int, source_movement_id: int, quantity: float}>, array<int, float>}
+     */
+    private function buildSequentialSources(
+        Movement $deduction,
+        Collection $inbound,
+        ?float $overrideCostPerUnit = null,
+    ): array {
         $remaining = (float) $deduction->quantity;
         $sources = [];
         $costMap = [];
@@ -117,53 +184,11 @@ class CostingService
                 'source_movement_id' => $m->id,
                 'quantity' => $take,
             ];
-            $costMap[$m->id] = (float) $m->cost_per_unit;
+            $costMap[$m->id] = $overrideCostPerUnit ?? (float) $m->cost_per_unit;
             $remaining -= $take;
         }
 
-        $this->persistSources($deduction, $sources, $costMap);
-    }
-
-    /**
-     * AVERAGE: fetch only lots with remaining stock (DB-filtered, no ordering needed),
-     * then distribute the deduction quantity proportionally across them.
-     */
-    private function linkAverageSources(Movement $deduction): void
-    {
-        /** @var Collection<Movement> $inbound */
-        $inbound = $this->inboundQuery($deduction)
-            ->whereRaw('quantity > consumed_quantity')
-            ->get();
-
-        if ($inbound->isEmpty()) {
-            return;
-        }
-
-        $totalRemaining = $inbound->sum(fn ($m) => (float) $m->quantity - (float) $m->consumed_quantity);
-
-        if ($totalRemaining <= 0.0) {
-            return;
-        }
-
-        $deductionQty = (float) $deduction->quantity;
-        $sources = [];
-        $costMap = [];
-
-        foreach ($inbound as $m) {
-            $lotRemaining = (float) $m->quantity - (float) $m->consumed_quantity;
-            $qty = round(($lotRemaining / $totalRemaining) * $deductionQty, 4);
-
-            if ($qty > 0.0) {
-                $sources[] = [
-                    'deduction_movement_id' => $deduction->id,
-                    'source_movement_id' => $m->id,
-                    'quantity' => $qty,
-                ];
-                $costMap[$m->id] = (float) $m->cost_per_unit;
-            }
-        }
-
-        $this->persistSources($deduction, $sources, $costMap);
+        return [$sources, $costMap];
     }
 
     /**
@@ -204,7 +229,7 @@ class CostingService
         }
 
         if ($totalQty > 0.0) {
-            $deduction->update(['cost_per_unit' => $totalCost / $totalQty]);
+            $deduction->update(['cost_per_unit' => round($totalCost / $totalQty, 4)]);
         }
     }
 }

@@ -55,7 +55,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'transaction_id' => $transaction->id,
                 'type' => MovementType::Add,
                 'quantity' => $quantity,
-                'cost_per_unit' => $this->resolveCost($stockable, $options),
+                'cost_per_unit' => $this->resolveCost($stockable, $options->cost),
                 'before_quantity' => $beforeQuantity,
                 'after_quantity' => $stock->quantity,
                 'reference_type' => $options->reference ? get_class($options->reference) : null,
@@ -201,5 +201,27 @@ class StockService extends BaseService implements StockServiceInterface
 
             return $stock;
         });
+    }
+
+    /**
+     * Resolve the cost_per_unit to record on an inbound movement.
+     *
+     * Resolution order:
+     *  2. Stockable's cost_price attribute, only when strictly positive.
+     *  3. null — no cost information available.
+     */
+    private function resolveCost(mixed $stockable, float|int|null $cost): ?float
+    {
+        if (! is_null($cost)) {
+            return $cost > 0.0 ? $cost : 0;
+        }
+
+        if (isset($stockable->cost_price)) {
+            $cost = (float) $stockable->cost_price;
+
+            return $cost > 0.0 ? $cost : 0;
+        }
+
+        return null;
     }
 }

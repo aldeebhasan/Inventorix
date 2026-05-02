@@ -17,12 +17,7 @@ final class StockOperationDto
         public ?TransactionType $transactionType = null,
         public ?Model $causable = null,
         public ?Model $reference = null,
-        /**
-         * false = not provided; falls back to $stockable->cost_price
-         * null  = explicitly no cost (overrides cost_price)
-         * float = explicit cost per unit
-         */
-        public float|false|null $cost = false,
+        public ?float $cost = null,
         public ?string $note = null,
         public ?int $createdBy = null,
         public bool $allowNegative = false,

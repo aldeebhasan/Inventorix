@@ -71,29 +71,6 @@ abstract class BaseService
     }
 
     /**
-     * Resolve the cost_per_unit to record on an inbound movement.
-     *
-     * Resolution order:
-     *  1. $options->cost !== false  → explicit value provided (null means "no cost").
-     *  2. Stockable's cost_price attribute, only when strictly positive.
-     *  3. null — no cost information available.
-     */
-    protected function resolveCost(mixed $stockable, StockOperationDto $options): ?float
-    {
-        if ($options->cost !== false) {
-            return $options->cost !== null ? (float) $options->cost : null;
-        }
-
-        if (isset($stockable->cost_price)) {
-            $cost = (float) $stockable->cost_price;
-
-            return $cost > 0.0 ? $cost : null;
-        }
-
-        return null;
-    }
-
-    /**
      * Recompute cost_per_unit for a deduction from its current movement_sources and
      * persist the result on the movement. Useful after correcting a source lot's cost.
      * Returns the new cost, or null when no sources exist.

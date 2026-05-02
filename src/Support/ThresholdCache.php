@@ -37,11 +37,10 @@ class ThresholdCache
             return;
         }
 
-
         // Also forget the global (null location) key when a location-specific one is cleared.
         if ($locationId === null) {
             $this->cache->forget($this->key($stockableType, $stockableId, null));
-        }else{
+        } else {
             $this->cache->forget($this->key($stockableType, $stockableId, $locationId));
         }
     }
