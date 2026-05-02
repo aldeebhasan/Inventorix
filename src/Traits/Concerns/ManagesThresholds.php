@@ -5,6 +5,7 @@ namespace Aldeebhasan\Inventorix\Traits\Concerns;
 use Aldeebhasan\Inventorix\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Threshold;
+use Aldeebhasan\Inventorix\Support\ThresholdCache;
 
 trait ManagesThresholds
 {
@@ -26,6 +27,8 @@ trait ManagesThresholds
                 'max_quantity' => $max,
             ]
         );
+
+        app(ThresholdCache::class)->forget(static::class, $this->getKey(), $locationId);
     }
 
     public function minStock(Location|int|null $location = null): float

@@ -67,7 +67,7 @@ class StockService extends BaseService implements StockServiceInterface
                 'external_reference' => $options->externalReference,
             ]);
 
-            if (! $options->skipSerials) {
+            if (! $options->shouldSkipSerials()) {
                 $this->serials->attach($movement, $stockable, $location, $quantity, $options->serials);
             }
 
@@ -101,7 +101,7 @@ class StockService extends BaseService implements StockServiceInterface
 
             // When deducting from reserved stock (e.g. fulfillment), reserved_quantity is already
             // committed so we check total quantity instead of available_quantity.
-            $effectiveAvailable = $options->fromReserved ? $stock->quantity : $stock->available_quantity;
+            $effectiveAvailable = $options->isFromReservation() ? $stock->quantity : $stock->available_quantity;
 
             if (! $allowNegative && $effectiveAvailable < $quantity) {
                 throw new InsufficientStockException(
@@ -134,7 +134,7 @@ class StockService extends BaseService implements StockServiceInterface
 
             $this->costing->linkSources($movement);
 
-            if (! $options->skipSerials) {
+            if (! $options->shouldSkipSerials()) {
                 $this->serials->detach($movement, $stockable, $location, $quantity, $options->serials);
             }
 

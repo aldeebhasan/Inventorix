@@ -141,14 +141,13 @@ class ReservationService extends BaseService implements ReservationServiceInterf
 
             $reservedSerials = $this->serials->getReservedSerials($reservation);
 
-            $deductDto = new StockOperationDto(
+            $deductDto = (new StockOperationDto(
                 transaction: $transaction,
                 causable: $causable,
                 note: $reservation->note,
                 createdBy: $reservation->created_by,
                 serials: $reservedSerials,
-                fromReserved: true,
-            );
+            ))->fromReservation();
 
             $stock = $this->stocks->deduct($stockable, $reservation->quantity, $location, $deductDto);
 

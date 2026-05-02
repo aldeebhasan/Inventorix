@@ -6,8 +6,12 @@ use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Models\Transaction;
 use Illuminate\Database\Eloquent\Model;
 
-final readonly class StockOperationDto
+final class StockOperationDto
 {
+    private bool $skipSerials = false;
+
+    private bool $fromReserved = false;
+
     public function __construct(
         public ?Transaction $transaction = null,
         public ?TransactionType $transactionType = null,
@@ -26,19 +30,34 @@ final readonly class StockOperationDto
         /** Serial numbers to attach (on add) or detach (on deduct). */
         public array $serials = [],
         /**
-         * When true the deduction is satisfied from reserved stock, so the
-         * available-quantity check uses total quantity rather than available_quantity.
-         * Used by ReservationService::fulfill().
-         */
-        public bool $fromReserved = false,
-        /**
          * When true StockService skips the serial attach/detach step entirely.
          * Used by RollbackService, which manages serial compensation directly.
          */
-        public bool $skipSerials = false,
         public ?string $lotReference = null,
-        public ?string $unitCode = null,
         public ?string $externalReference = null,
-        public ?string $reasonCode = null,
     ) {}
+
+    public function skipSerials(): self
+    {
+        $this->skipSerials = true;
+
+        return $this;
+    }
+
+    public function shouldSkipSerials(): bool
+    {
+        return $this->skipSerials;
+    }
+
+    public function fromReservation(): self
+    {
+        $this->fromReserved = true;
+
+        return $this;
+    }
+
+    public function isFromReservation(): bool
+    {
+        return $this->fromReserved;
+    }
 }

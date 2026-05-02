@@ -86,13 +86,12 @@ class RollbackService extends BaseService implements RollbackServiceInterface
      */
     private function reverseAdd(Movement $original, Transaction $reversalTransaction, string $note, ?int $createdBy): void
     {
-        $dto = new StockOperationDto(
+        $dto = (new StockOperationDto(
             transaction: $reversalTransaction,
             note: $note,
             createdBy: $createdBy,
             allowNegative: true,
-            skipSerials: true,
-        );
+        ))->skipSerials();
 
         $this->stocks->deduct($original->stockable, (float) $original->quantity, $original->location, $dto);
 
@@ -107,14 +106,13 @@ class RollbackService extends BaseService implements RollbackServiceInterface
     {
         $cost = $original->cost_per_unit !== null ? (float) $original->cost_per_unit : null;
 
-        $dto = new StockOperationDto(
+        $dto = (new StockOperationDto(
             transaction: $reversalTransaction,
             cost: $cost,
             note: $note,
             createdBy: $createdBy,
             allowNegative: true,
-            skipSerials: true,
-        );
+        ))->skipSerials();
 
         $this->stocks->add($original->stockable, (float) $original->quantity, $original->location, $dto);
 
