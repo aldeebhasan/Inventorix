@@ -92,11 +92,7 @@ class ReservationService extends BaseService implements ReservationServiceInterf
             $location = $reservation->location;
             $stockable = $reservation->stockable;
 
-            $stock = Stock::where('stockable_type', $reservation->stockable_type)
-                ->where('stockable_id', $reservation->stockable_id)
-                ->where('location_id', $reservation->location_id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $stock = $this->findOrCreateStock($stockable, $location);
 
             $stock->decrement('reserved_quantity', $reservation->quantity);
 

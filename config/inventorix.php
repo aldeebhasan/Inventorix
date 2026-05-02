@@ -135,6 +135,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Locking Strategy
+    |--------------------------------------------------------------------------
+    | Controls how stock row locks are acquired before write operations.
+    |
+    |   'pessimistic' — SELECT ... FOR UPDATE (default). Strongest consistency.
+    |                   Safe for all MySQL/PostgreSQL drivers.
+    |   'optimistic'  — Version-based optimistic locking (future expansion).
+    |                   Currently falls back to pessimistic.
+    |
+    | lock_retry: number of times to retry after a lock wait timeout (0 = no retry).
+    | lock_retry_base_ms: base delay in milliseconds before first retry.
+    |                     Each subsequent retry doubles the delay (exponential backoff).
+    |                     Example: base=100ms → retries at 100ms, 200ms, 400ms.
+    */
+    'locking' => [
+        'strategy' => env('INVENTORIX_LOCK_STRATEGY', 'pessimistic'),
+        'lock_retry' => env('INVENTORIX_LOCK_RETRY', 3),
+        'lock_retry_base_ms' => env('INVENTORIX_LOCK_RETRY_BASE_MS', 100),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Serial Number Tracking
     |--------------------------------------------------------------------------
     | When enabled, every addStock operation automatically generates a serial

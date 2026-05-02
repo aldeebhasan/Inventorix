@@ -24,10 +24,6 @@ final class StockOperationDto
         public ?\DateTimeInterface $expiresAt = null,
         /** Serial numbers to attach (on add) or detach (on deduct). */
         public array $serials = [],
-        /**
-         * When true StockService skips the serial attach/detach step entirely.
-         * Used by RollbackService, which manages serial compensation directly.
-         */
         public ?string $lotReference = null,
         public ?string $externalReference = null,
     ) {}

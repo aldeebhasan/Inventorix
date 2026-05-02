@@ -9,6 +9,7 @@ use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\Stock;
 use Aldeebhasan\Inventorix\Models\Transaction;
+use Aldeebhasan\Inventorix\Support\LockRetry;
 
 abstract class BaseService
 {
@@ -31,16 +32,18 @@ abstract class BaseService
             'location_id' => $location->id,
         ];
 
-        $stock = Stock::where($attributes)->lockForUpdate()->first();
+        return LockRetry::run(function () use ($attributes) {
+            $stock = Stock::where($attributes)->lockForUpdate()->first();
 
-        if (! $stock) {
-            $stock = Stock::create(array_merge($attributes, [
-                'quantity' => 0,
-                'reserved_quantity' => 0,
-            ]));
-        }
+            if (! $stock) {
+                $stock = Stock::create(array_merge($attributes, [
+                    'quantity' => 0,
+                    'reserved_quantity' => 0,
+                ]));
+            }
 
-        return $stock;
+            return $stock;
+        });
     }
 
     protected function recordMovement(array $data): Movement
