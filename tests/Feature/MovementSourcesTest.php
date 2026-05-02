@@ -238,3 +238,59 @@ describe('CostingService::computeDeductionCost', function () {
         expect(app(CostingService::class)->recomputeAndStore($deduction))->toBeNull();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Batch path — bulk() with N deductions across shared lots
+// ---------------------------------------------------------------------------
+
+describe('CostingService::persistSources — batch path via bulk()', function () {
+    beforeEach(function () {
+        config()->set('inventorix.costing_strategy', 'fifo');
+        [$this->location, $this->product] = setup();
+    });
+
+    it('creates the correct number of MovementSource rows and updates consumed_quantity correctly for 5 deductions across 3 lots', function () {
+        // 3 shared source lots: 10 @ $5, 10 @ $8, 10 @ $12
+        Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(cost: 5.0));
+        Carbon::setTestNow(now()->addSecond());
+        Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(cost: 8.0));
+        Carbon::setTestNow(now()->addSeconds(2));
+        Inventorix::addStock($this->product, 10, $this->location, new StockOperationDto(cost: 12.0));
+        Carbon::setTestNow(null);
+
+        $lots = Movement::where('type', MovementType::Add->value)->orderBy('id')->get();
+        [$lot1, $lot2, $lot3] = [$lots[0], $lots[1], $lots[2]];
+
+        // 5 deductions of 6 units each = 30 units total, spread across all 3 lots (FIFO)
+        // Lot1 (10): consumed fully by deductions 1 and 2
+        // Lot2 (10): consumed fully by deductions 2, 3, and 4
+        // Lot3 (10): consumed fully by deductions 4 and 5
+        Inventorix::bulk(function ($tx) {
+            $dto = new StockOperationDto(transaction: $tx);
+            for ($i = 0; $i < 5; $i++) {
+                Inventorix::deductStock($this->product, 6, $this->location, $dto);
+            }
+        });
+
+        // Total MovementSource rows: each deduction draws from 1 or 2 lots, so total depends on FIFO consumption.
+        // Deduction 1: 6 from Lot1 → 1 row
+        // Deduction 2: 4 from Lot1 + 2 from Lot2 → 2 rows
+        // Deduction 3: 6 from Lot2 → 1 row
+        // Deduction 4: 2 from Lot2 + 4 from Lot3 → 2 rows
+        // Deduction 5: 6 from Lot3 → 1 row
+        // Total: 7 rows
+        expect(MovementSource::count())->toBe(7);
+
+        // All source lots should be fully consumed (10 units each)
+        expect((float) $lot1->fresh()->consumed_quantity)->toEqual(10.0);
+        expect((float) $lot2->fresh()->consumed_quantity)->toEqual(10.0);
+        expect((float) $lot3->fresh()->consumed_quantity)->toEqual(10.0);
+
+        // Every deduction movement must have a non-null cost_per_unit
+        $deductions = Movement::where('type', MovementType::Deduct->value)->orderBy('id')->get();
+        expect($deductions)->toHaveCount(5);
+        foreach ($deductions as $deduction) {
+            expect($deduction->cost_per_unit)->not->toBeNull();
+        }
+    });
+});

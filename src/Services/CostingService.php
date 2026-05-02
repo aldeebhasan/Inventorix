@@ -8,6 +8,7 @@ use Aldeebhasan\Inventorix\Models\Movement;
 use Aldeebhasan\Inventorix\Models\MovementSource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class CostingService
 {
@@ -215,14 +216,18 @@ class CostingService
             return;
         }
 
+        // 1. Batch-insert all MovementSource rows in one query
+        $now = now()->toDateTimeString();
+        $rows = array_map(fn ($s) => array_merge($s, ['created_at' => $now, 'updated_at' => $now]), $sources);
+        MovementSource::insert($rows);
+
+        // 2. Batch-update consumed_quantity on all source movements in one query
+        $this->batchIncrementConsumed($sources);
+
+        // 3. Derive and store cost_per_unit on the deduction
         $totalQty = 0.0;
         $totalCost = 0.0;
-
         foreach ($sources as $source) {
-            MovementSource::create($source);
-            Movement::where('id', $source['source_movement_id'])
-                ->increment('consumed_quantity', $source['quantity']);
-
             $qty = (float) $source['quantity'];
             $totalQty += $qty;
             $totalCost += $qty * ($costMap[$source['source_movement_id']] ?? 0.0);
@@ -231,5 +236,33 @@ class CostingService
         if ($totalQty > 0.0) {
             $deduction->update(['cost_per_unit' => round($totalCost / $totalQty, 4)]);
         }
+    }
+
+    /**
+     * Batch-update consumed_quantity on multiple source movements in a single SQL statement.
+     */
+    private function batchIncrementConsumed(array $sources): void
+    {
+        if (empty($sources)) {
+            return;
+        }
+
+        $table = (new Movement)->getTable();
+        $cases = '';
+        $ids = [];
+        $bindings = [];
+
+        foreach ($sources as $source) {
+            $cases .= ' WHEN id = ? THEN ?';
+            $bindings[] = $source['source_movement_id'];
+            $bindings[] = (float) $source['quantity'];
+            $ids[] = $source['source_movement_id'];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        DB::statement(
+            "UPDATE {$table} SET consumed_quantity = consumed_quantity + CASE{$cases} ELSE 0 END WHERE id IN ({$placeholders})",
+            array_merge($bindings, $ids),
+        );
     }
 }
