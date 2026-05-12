@@ -40,6 +40,10 @@ class StockService extends BaseService implements StockServiceInterface
         return DB::transaction(function () use ($stockable, $quantity, $location, $options) {
             [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual);
 
+            if (! $autoCreated && $transaction->status === TransactionStatus::Committed) {
+                return $this->findOrCreateStock($stockable, $location, false);
+            }
+
             $stock = $this->findOrCreateStock($stockable, $location);
             $beforeQuantity = $stock->quantity;
 
@@ -95,6 +99,10 @@ class StockService extends BaseService implements StockServiceInterface
 
         return DB::transaction(function () use ($stockable, $quantity, $location, $options) {
             [$transaction, $autoCreated] = $this->resolveOrCreateTransaction($options, TransactionType::Manual);
+
+            if (! $autoCreated && $transaction->status === TransactionStatus::Committed) {
+                return $this->findOrCreateStock($stockable, $location, false);
+            }
 
             $stock = $this->findOrCreateStock($stockable, $location);
             $allowNegative = $options->allowNegative || config('inventorix.allow_negative_stock', false);

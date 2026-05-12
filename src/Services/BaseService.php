@@ -54,6 +54,10 @@ abstract class BaseService
     /**
      * Return the provided transaction or auto-create one.
      * Returns [$transaction, $wasAutoCreated].
+     *
+     * When the resolved type is idempotent and a causable is present, an existing
+     * Committed transaction for (type, causable_type, causable_id) is returned with
+     * $wasAutoCreated = false, causing the caller to skip re-committing stock mutations.
      */
     protected function resolveOrCreateTransaction(StockOperationDto $options, TransactionType $defaultType): array
     {
@@ -61,8 +65,22 @@ abstract class BaseService
             return [$options->transaction, false];
         }
 
+        $resolvedType = $options->transactionType ?? $defaultType;
+
+        if ($options->causable !== null && in_array($resolvedType, TransactionType::idempotentTypes(), true)) {
+            $existing = Transaction::where('type', $resolvedType)
+                ->where('causable_type', get_class($options->causable))
+                ->where('causable_id', $options->causable->getKey())
+                ->where('status', TransactionStatus::Committed)
+                ->first();
+
+            if ($existing !== null) {
+                return [$existing, false];
+            }
+        }
+
         $transaction = Transaction::create([
-            'type' => $options->transactionType ?? $defaultType,
+            'type' => $resolvedType,
             'status' => TransactionStatus::Pending,
             'causable_type' => $options->causable ? get_class($options->causable) : null,
             'causable_id' => $options->causable ? $options->causable->getKey() : null,

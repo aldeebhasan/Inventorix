@@ -1,10 +1,13 @@
 <?php
 
 use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
+use Aldeebhasan\Inventorix\Enums\TransactionStatus;
+use Aldeebhasan\Inventorix\Enums\TransactionType;
 use Aldeebhasan\Inventorix\Exceptions\InsufficientStockException;
 use Aldeebhasan\Inventorix\Facades\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
 use Aldeebhasan\Inventorix\Models\Movement;
+use Aldeebhasan\Inventorix\Models\Transaction;
 use Aldeebhasan\Inventorix\Tests\Support\Order;
 use Aldeebhasan\Inventorix\Tests\Support\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,6 +18,100 @@ beforeEach(function () {
     $this->location = Location::create(['name' => 'Warehouse A', 'code' => 'WH-A', 'is_active' => true]);
     $this->product = Product::create(['name' => 'Widget', 'cost_price' => 10.00]);
     $this->order = Order::create(['number' => 'INV-001']);
+});
+
+// ---------------------------------------------------------------------------
+// Layer 2 - transaction-level idempotency via existing fields
+// ---------------------------------------------------------------------------
+
+it('Purchase + causable: second call returns same committed transaction and does not mutate stock', function () {
+    $dto = new StockOperationDto(transactionType: TransactionType::Purchase, causable: $this->order);
+
+    $stock1 = $this->product->addStock(10, $this->location, $dto);
+    $stock2 = $this->product->addStock(10, $this->location, $dto);
+
+    expect((float) $stock2->quantity)->toBe(10.0)
+        ->and(Transaction::count())->toBe(1);
+});
+
+it('Purchase + causable: existing Pending transaction is not reused', function () {
+    // Simulate a crashed first attempt: Pending transaction exists but never committed
+    Transaction::create([
+        'type' => TransactionType::Purchase,
+        'status' => TransactionStatus::Pending,
+        'causable_type' => get_class($this->order),
+        'causable_id' => $this->order->id,
+    ]);
+
+    $this->product->addStock(10, $this->location, new StockOperationDto(
+        transactionType: TransactionType::Purchase,
+        causable: $this->order,
+    ));
+
+    expect(Transaction::count())->toBe(2);
+});
+
+it('Purchase + causable: existing RolledBack transaction is not reused', function () {
+    Transaction::create([
+        'type' => TransactionType::Purchase,
+        'status' => TransactionStatus::RolledBack,
+        'causable_type' => get_class($this->order),
+        'causable_id' => $this->order->id,
+    ]);
+
+    $this->product->addStock(10, $this->location, new StockOperationDto(
+        transactionType: TransactionType::Purchase,
+        causable: $this->order,
+    ));
+
+    expect(Transaction::count())->toBe(2);
+});
+
+it('Purchase without causable: always creates a new transaction', function () {
+    $this->product->addStock(10, $this->location, new StockOperationDto(transactionType: TransactionType::Purchase));
+    $this->product->addStock(10, $this->location, new StockOperationDto(transactionType: TransactionType::Purchase));
+
+    expect(Transaction::count())->toBe(2);
+});
+
+it('Adjustment + causable: always creates a new transaction (repeatable)', function () {
+    $dto = new StockOperationDto(transactionType: TransactionType::Adjustment, causable: $this->order);
+
+    $this->product->addStock(10, $this->location, $dto);
+    $this->product->addStock(5, $this->location, $dto);
+
+    expect(Transaction::count())->toBe(2);
+    expect((float) $this->product->addStock(0.001, $this->location, $dto)->quantity)->toBeGreaterThan(15.0);
+})->skip('Adjustment dedup disabled by design - this documents expected behaviour');
+
+it('Adjustment + causable: second call creates a new transaction not reusing the first', function () {
+    $this->product->addStock(10, $this->location, new StockOperationDto(
+        transactionType: TransactionType::Adjustment,
+        causable: $this->order,
+    ));
+    $this->product->addStock(5, $this->location, new StockOperationDto(
+        transactionType: TransactionType::Adjustment,
+        causable: $this->order,
+    ));
+
+    expect(Transaction::count())->toBe(2);
+    expect((float) $this->product->stocks()->where('location_id', $this->location->id)->value('quantity'))->toBe(15.0);
+});
+
+it('Purchase + different causable: creates two distinct transactions', function () {
+    $otherOrder = Order::create(['number' => 'INV-002']);
+
+    $this->product->addStock(10, $this->location, new StockOperationDto(
+        transactionType: TransactionType::Purchase,
+        causable: $this->order,
+    ));
+    $this->product->addStock(10, $this->location, new StockOperationDto(
+        transactionType: TransactionType::Purchase,
+        causable: $otherOrder,
+    ));
+
+    expect(Transaction::count())->toBe(2);
+    expect((float) $this->product->stocks()->where('location_id', $this->location->id)->value('quantity'))->toBe(20.0);
 });
 
 // ---------------------------------------------------------------------------
