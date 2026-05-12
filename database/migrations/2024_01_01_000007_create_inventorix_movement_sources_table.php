@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('quantity', 15, 4);
             $table->timestamps();
 
-            $table->index('deduction_movement_id');
+            $table->unique(['deduction_movement_id', 'source_movement_id']);
             $table->index('source_movement_id');
         });
     }

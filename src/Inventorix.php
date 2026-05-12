@@ -74,6 +74,16 @@ class Inventorix
         return $this->stocks->adjust($stockable, $newQuantity, $this->resolveLocation($location), $options);
     }
 
+    public function adjustByReference(
+        Model $stockable,
+        Model $reference,
+        int|float $newQuantity,
+        Location|int $location,
+        StockOperationDto $options = new StockOperationDto
+    ): Stock {
+        return $this->stocks->adjustByReference($stockable, $reference, $newQuantity, $this->resolveLocation($location), $options);
+    }
+
     public function bulk(callable $callback, StockOperationDto $options = new StockOperationDto): Transaction
     {
         return DB::transaction(function () use ($callback, $options) {

@@ -203,6 +203,45 @@ class StockService extends BaseService implements StockServiceInterface
         });
     }
 
+    public function adjustByReference(Model $stockable, Model $reference, int|float $newQuantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock
+    {
+        $movements = Movement::where('reference_type', get_class($reference))
+            ->where('reference_id', $reference->getKey())
+            ->where('stockable_type', get_class($stockable))
+            ->where('stockable_id', $stockable->getKey())
+            ->where('location_id', $location->id)
+            ->get(['type', 'quantity']);
+
+        $existingQty = $movements->sum(function (Movement $movement) {
+            return $movement->type === MovementType::Add
+                ? (float) $movement->quantity
+                : -(float) $movement->quantity;
+        });
+
+        $delta = $newQuantity - $existingQty;
+
+        if (abs($delta) < 0.0001) {
+            return $this->findOrCreateStock($stockable, $location, false);
+        }
+
+        $correctionDto = new StockOperationDto(
+            transaction: $options->transaction,
+            transactionType: TransactionType::Adjustment,
+            causable: $options->causable,
+            reference: $reference,
+            cost: $options->cost,
+            note: sprintf('Correction for [%s#%s]: %s -> %s', class_basename($reference), $reference->getKey(), $existingQty, $newQuantity),
+            createdBy: $options->createdBy,
+            allowNegative: $options->allowNegative,
+        );
+
+        if ($delta > 0) {
+            return $this->add($stockable, $delta, $location, $correctionDto);
+        }
+
+        return $this->deduct($stockable, abs($delta), $location, $correctionDto);
+    }
+
     /**
      * Resolve the cost_per_unit to record on an inbound movement.
      *

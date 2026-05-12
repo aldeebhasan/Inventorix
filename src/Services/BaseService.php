@@ -24,7 +24,7 @@ abstract class BaseService
         return ! in_array($eventShortName, $disabled, true);
     }
 
-    protected function findOrCreateStock(mixed $stockable, Location $location): Stock
+    protected function findOrCreateStock(mixed $stockable, Location $location, $lock = true): Stock
     {
         $attributes = [
             'stockable_type' => get_class($stockable),
@@ -32,8 +32,8 @@ abstract class BaseService
             'location_id' => $location->id,
         ];
 
-        return LockRetry::run(function () use ($attributes) {
-            $stock = Stock::where($attributes)->lockForUpdate()->first();
+        return LockRetry::run(function () use ($attributes, $lock) {
+            $stock = Stock::where($attributes)->when($lock, fn ($q) => $q->lockForUpdate())->first();
 
             if (! $stock) {
                 $stock = Stock::create(array_merge($attributes, [

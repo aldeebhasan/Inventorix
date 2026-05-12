@@ -14,4 +14,6 @@ interface StockServiceInterface
     public function deduct(Model $stockable, int|float $quantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock;
 
     public function adjust(Model $stockable, int|float $newQuantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock;
+
+    public function adjustByReference(Model $stockable, Model $reference, int|float $newQuantity, Location $location, StockOperationDto $options = new StockOperationDto): Stock;
 }

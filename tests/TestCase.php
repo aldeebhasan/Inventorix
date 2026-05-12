@@ -41,5 +41,11 @@ class TestCase extends Orchestra
             $table->decimal('cost_price', 10, 2)->default(0);
             $table->timestamps();
         });
+
+        Schema::create('orders', function (Blueprint $table) {
+            $table->id();
+            $table->string('number');
+            $table->timestamps();
+        });
     }
 }
