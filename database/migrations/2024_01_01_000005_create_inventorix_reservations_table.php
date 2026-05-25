@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
 
-            $table->index(['stockable_type', 'stockable_id', 'location_id']);
+            $table->index(['stockable_type', 'stockable_id', 'location_id'], 'inventorix_reservations_stockable_location_index');
             $table->index(['status', 'expires_at']);
             $table->index('location_id');
         });

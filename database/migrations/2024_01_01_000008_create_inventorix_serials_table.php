@@ -23,7 +23,7 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->index(['stockable_type', 'stockable_id', 'location_id', 'status']);
+            $table->index(['stockable_type', 'stockable_id', 'location_id', 'status'], 'inventorix_serials_stockable_location_status_index');
         });
     }
 

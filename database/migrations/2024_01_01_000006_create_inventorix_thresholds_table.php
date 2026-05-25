@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('max_quantity', 15, 4)->nullable();
             $table->timestamps();
 
-            $table->unique(['stockable_type', 'stockable_id', 'location_id']);
+            $table->unique(['stockable_type', 'stockable_id', 'location_id'], 'inventorix_thresholds_stockable_location_unique');
         });
     }
 
