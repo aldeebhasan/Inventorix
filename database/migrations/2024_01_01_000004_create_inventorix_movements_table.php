@@ -21,11 +21,11 @@ return new class extends Migration
             $table->decimal('quantity', 15, 4);
             $table->decimal('before_quantity', 15, 4);
             $table->decimal('after_quantity', 15, 4);
+            $table->decimal('consumed_quantity', 15, 4)->default(0);
             $table->decimal('cost_per_unit', 15, 4)->nullable();
             $table->string('lot_reference', 100)->nullable();
             $table->date('expires_at')->nullable();
             $table->string('external_reference', 150)->nullable();
-            $table->decimal('consumed_quantity', 15, 4)->default(0)->after('quantity');
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->text('note')->nullable();
