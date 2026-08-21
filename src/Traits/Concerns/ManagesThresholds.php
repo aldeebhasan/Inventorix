@@ -11,6 +11,10 @@ trait ManagesThresholds
 {
     public function setStockThreshold(int|float $min, int|float|null $max = null, Location|int|null $location = null): void
     {
+        if (! $this->isInventory()) {
+            return;
+        }
+
         $locationId = null;
         if ($location !== null) {
             $locationId = $location instanceof Location ? $location->id : $location;
@@ -33,6 +37,10 @@ trait ManagesThresholds
 
     public function minStock(Location|int|null $location = null): float
     {
+        if (! $this->isInventory()) {
+            return 0.0;
+        }
+
         $locationId = null;
         if ($location !== null) {
             $locationId = $location instanceof Location ? $location->id : $location;
@@ -55,6 +63,10 @@ trait ManagesThresholds
 
     public function maxStock(Location|int|null $location = null): ?float
     {
+        if (! $this->isInventory()) {
+            return null;
+        }
+
         $locationId = null;
         if ($location !== null) {
             $locationId = $location instanceof Location ? $location->id : $location;
@@ -77,6 +89,10 @@ trait ManagesThresholds
 
     public function checkThresholds(Location|int|null $location = null): void
     {
+        if (! $this->isInventory()) {
+            return;
+        }
+
         app(Inventorix::class)->checkThresholds($this, $location);
     }
 }

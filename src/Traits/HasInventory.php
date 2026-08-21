@@ -29,6 +29,11 @@ trait HasInventory
     use TracksMovements;
     use TracksSerials;
 
+    public function isInventory(): bool
+    {
+        return true;
+    }
+
     public function stocks(): HasMany
     {
         return $this->hasMany(Stock::class, 'stockable_id')

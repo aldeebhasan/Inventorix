@@ -14,6 +14,10 @@ trait QueriesStock
 {
     public function stockAt(Location|int $location): ?Stock
     {
+        if (! $this->isInventory()) {
+            return null;
+        }
+
         $locationId = $location instanceof Location ? $location->id : $location;
 
         return Stock::where('stockable_type', static::class)
@@ -24,6 +28,10 @@ trait QueriesStock
 
     public function totalStock(?Location $location = null, bool $includeChildren = false): float
     {
+        if (! $this->isInventory()) {
+            return PHP_FLOAT_MAX;
+        }
+
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
@@ -40,6 +48,10 @@ trait QueriesStock
 
     public function availableStock(Location|int|null $location = null, bool $includeChildren = false): float
     {
+        if (! $this->isInventory()) {
+            return PHP_FLOAT_MAX;
+        }
+
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
@@ -57,6 +69,10 @@ trait QueriesStock
 
     public function reservedStock(Location|int|null $location = null, bool $includeChildren = false): float
     {
+        if (! $this->isInventory()) {
+            return 0.0;
+        }
+
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
@@ -74,6 +90,10 @@ trait QueriesStock
 
     public function isLowStock(Location|int|null $location = null, bool $includeChildren = false): bool
     {
+        if (! $this->isInventory()) {
+            return false;
+        }
+
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey());
 
@@ -108,6 +128,17 @@ trait QueriesStock
 
     public function stockSummary(?Location $location = null, bool $includeChildren = false): array
     {
+        if (! $this->isInventory()) {
+            return [
+                'total_quantity' => PHP_FLOAT_MAX,
+                'reserved_quantity' => 0,
+                'available_quantity' => PHP_FLOAT_MAX,
+                'locations' => [],
+                'is_low_stock' => false,
+                'last_movement_at' => null,
+            ];
+        }
+
         $query = Stock::where('stockable_type', static::class)
             ->where('stockable_id', $this->getKey())
             ->with('location');
@@ -155,6 +186,10 @@ trait QueriesStock
 
     public function stockValuation(Location|int|null $location = null): float
     {
+        if (! $this->isInventory()) {
+            return 0.0;
+        }
+
         if (is_int($location)) {
             $location = Location::find($location);
         }
@@ -164,16 +199,28 @@ trait QueriesStock
 
     public function stockVelocity(Location $location, int $days = 30): float
     {
+        if (! $this->isInventory()) {
+            return 0.0;
+        }
+
         return app(StockVelocityQuery::class)->velocity($this, $location, $days);
     }
 
     public function daysOfStock(Location $location, int $velocityDays = 30): float
     {
+        if (! $this->isInventory()) {
+            return 0.0;
+        }
+
         return app(StockVelocityQuery::class)->daysOfStock($this, $location, $velocityDays);
     }
 
     public function peakDemandDay(Location $location, int $days = 90): ?Carbon
     {
+        if (! $this->isInventory()) {
+            return null;
+        }
+
         return app(StockVelocityQuery::class)->peakDemandDay($this, $location, $days);
     }
 }

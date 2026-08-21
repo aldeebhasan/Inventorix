@@ -10,6 +10,10 @@ trait ManagesTransfers
 {
     public function transferStock(int|float $quantity, Location|int $from, Location|int $to, StockOperationDto $options = new StockOperationDto): bool
     {
+        if (! $this->isInventory()) {
+            return true;
+        }
+
         return app(Inventorix::class)->transfer($this, $quantity, $from, $to, $options);
     }
 }
