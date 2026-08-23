@@ -69,6 +69,16 @@ class Inventorix
         return $this->transfers->transfer($stockable, $quantity, $this->resolveLocation($from), $this->resolveLocation($to), $options);
     }
 
+    public function send(Model $stockable, int|float $quantity, Location|int $from, StockOperationDto $options = new StockOperationDto): Transaction
+    {
+        return $this->transfers->send($stockable, $quantity, $this->resolveLocation($from), $options);
+    }
+
+    public function receive(Transaction $transaction, Model $stockable, int|float $quantity, Location|int $to, StockOperationDto $options = new StockOperationDto): bool
+    {
+        return $this->transfers->receive($transaction, $stockable, $quantity, $this->resolveLocation($to), $options);
+    }
+
     public function adjustStock(Model $stockable, int|float $newQuantity, Location|int $location, StockOperationDto $options = new StockOperationDto): Stock
     {
         return $this->stocks->adjust($stockable, $newQuantity, $this->resolveLocation($location), $options);

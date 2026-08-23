@@ -4,6 +4,8 @@ use Aldeebhasan\Inventorix\DTOs\StockOperationDto;
 use Aldeebhasan\Inventorix\Events\StockAdded;
 use Aldeebhasan\Inventorix\Events\StockAdjusted;
 use Aldeebhasan\Inventorix\Events\StockDeducted;
+use Aldeebhasan\Inventorix\Events\StockReceived;
+use Aldeebhasan\Inventorix\Events\StockSent;
 use Aldeebhasan\Inventorix\Events\StockTransferred;
 use Aldeebhasan\Inventorix\Facades\Inventorix;
 use Aldeebhasan\Inventorix\Models\Location;
@@ -94,6 +96,33 @@ it('surfaces causable and externalReference on StockTransferred', function () {
     Event::assertDispatched(StockTransferred::class, function (StockTransferred $event) {
         return $event->causable?->is($this->causable)
             && $event->externalReference === 'TRF-321';
+    });
+});
+
+it('dispatches StockSent event on send', function () {
+    Event::fake([StockSent::class]);
+
+    Inventorix::addStock($this->product, 100, $this->location);
+    Inventorix::send($this->product, 30, $this->location);
+
+    Event::assertDispatched(StockSent::class, function (StockSent $event) {
+        return $event->quantity === 30
+            && $event->fromLocation->id === $this->location->id;
+    });
+});
+
+it('dispatches StockReceived event on receive', function () {
+    $locationB = Location::create(['name' => 'Warehouse B', 'code' => 'WH-B', 'is_active' => true]);
+
+    Event::fake([StockReceived::class]);
+
+    Inventorix::addStock($this->product, 100, $this->location);
+    $transaction = Inventorix::send($this->product, 30, $this->location);
+    Inventorix::receive($transaction, $this->product, 30, $locationB);
+
+    Event::assertDispatched(StockReceived::class, function (StockReceived $event) use ($locationB) {
+        return $event->quantity === 30
+            && $event->toLocation->id === $locationB->id;
     });
 });
 
