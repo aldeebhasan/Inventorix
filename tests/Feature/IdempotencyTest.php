@@ -21,84 +21,21 @@ beforeEach(function () {
 });
 
 // ---------------------------------------------------------------------------
-// Layer 2 - transaction-level idempotency via existing fields
+// Transaction reuse - same causable groups movements under one transaction
 // ---------------------------------------------------------------------------
 
-it('Purchase + causable: second call returns same committed transaction and does not mutate stock', function () {
+it('same causable reuses existing transaction and creates movements for each call', function () {
     $dto = new StockOperationDto(transactionType: TransactionType::Purchase, causable: $this->order);
 
     $stock1 = $this->product->addStock(10, $this->location, $dto);
     $stock2 = $this->product->addStock(10, $this->location, $dto);
 
-    expect((float) $stock2->quantity)->toBe(10.0)
-        ->and(Transaction::count())->toBe(1);
+    expect((float) $stock2->quantity)->toBe(20.0)
+        ->and(Transaction::count())->toBe(1)
+        ->and(Movement::count())->toBe(2);
 });
 
-it('Purchase + causable: existing Pending transaction is not reused', function () {
-    // Simulate a crashed first attempt: Pending transaction exists but never committed
-    Transaction::create([
-        'type' => TransactionType::Purchase,
-        'status' => TransactionStatus::Pending,
-        'causable_type' => get_class($this->order),
-        'causable_id' => $this->order->id,
-    ]);
-
-    $this->product->addStock(10, $this->location, new StockOperationDto(
-        transactionType: TransactionType::Purchase,
-        causable: $this->order,
-    ));
-
-    expect(Transaction::count())->toBe(2);
-});
-
-it('Purchase + causable: existing RolledBack transaction is not reused', function () {
-    Transaction::create([
-        'type' => TransactionType::Purchase,
-        'status' => TransactionStatus::RolledBack,
-        'causable_type' => get_class($this->order),
-        'causable_id' => $this->order->id,
-    ]);
-
-    $this->product->addStock(10, $this->location, new StockOperationDto(
-        transactionType: TransactionType::Purchase,
-        causable: $this->order,
-    ));
-
-    expect(Transaction::count())->toBe(2);
-});
-
-it('Purchase without causable: always creates a new transaction', function () {
-    $this->product->addStock(10, $this->location, new StockOperationDto(transactionType: TransactionType::Purchase));
-    $this->product->addStock(10, $this->location, new StockOperationDto(transactionType: TransactionType::Purchase));
-
-    expect(Transaction::count())->toBe(2);
-});
-
-it('Adjustment + causable: always creates a new transaction (repeatable)', function () {
-    $dto = new StockOperationDto(transactionType: TransactionType::Adjustment, causable: $this->order);
-
-    $this->product->addStock(10, $this->location, $dto);
-    $this->product->addStock(5, $this->location, $dto);
-
-    expect(Transaction::count())->toBe(2);
-    expect((float) $this->product->addStock(0.001, $this->location, $dto)->quantity)->toBeGreaterThan(15.0);
-})->skip('Adjustment dedup disabled by design - this documents expected behaviour');
-
-it('Adjustment + causable: second call creates a new transaction not reusing the first', function () {
-    $this->product->addStock(10, $this->location, new StockOperationDto(
-        transactionType: TransactionType::Adjustment,
-        causable: $this->order,
-    ));
-    $this->product->addStock(5, $this->location, new StockOperationDto(
-        transactionType: TransactionType::Adjustment,
-        causable: $this->order,
-    ));
-
-    expect(Transaction::count())->toBe(2);
-    expect((float) $this->product->stocks()->where('location_id', $this->location->id)->value('quantity'))->toBe(15.0);
-});
-
-it('Purchase + different causable: creates two distinct transactions', function () {
+it('different causable creates separate transactions', function () {
     $otherOrder = Order::create(['number' => 'INV-002']);
 
     $this->product->addStock(10, $this->location, new StockOperationDto(
@@ -114,8 +51,47 @@ it('Purchase + different causable: creates two distinct transactions', function 
     expect((float) $this->product->stocks()->where('location_id', $this->location->id)->value('quantity'))->toBe(20.0);
 });
 
+it('no causable always creates a new transaction', function () {
+    $this->product->addStock(10, $this->location, new StockOperationDto(transactionType: TransactionType::Purchase));
+    $this->product->addStock(10, $this->location, new StockOperationDto(transactionType: TransactionType::Purchase));
+
+    expect(Transaction::count())->toBe(2);
+});
+
+it('passing explicit transaction groups movements without creating a new one', function () {
+    $transaction = Transaction::create([
+        'type' => TransactionType::Purchase,
+        'status' => TransactionStatus::Pending,
+        'causable_type' => get_class($this->order),
+        'causable_id' => $this->order->id,
+    ]);
+
+    $this->product->addStock(10, $this->location, new StockOperationDto(transaction: $transaction));
+    $this->product->addStock(5, $this->location, new StockOperationDto(transaction: $transaction));
+
+    expect(Transaction::count())->toBe(1)
+        ->and(Movement::count())->toBe(2)
+        ->and((float) $this->product->stocks()->where('location_id', $this->location->id)->value('quantity'))->toBe(15.0);
+});
+
+it('invoice edit on same item creates additional movements under same transaction', function () {
+    $dto = new StockOperationDto(
+        transactionType: TransactionType::Purchase,
+        causable: $this->order,
+        reference: $this->product,
+    );
+
+    $this->product->addStock(10, $this->location, $dto);
+    // Simulate an edit: add more to the same invoice
+    $this->product->addStock(5, $this->location, $dto);
+
+    expect((float) $this->product->stocks()->where('location_id', $this->location->id)->value('quantity'))->toBe(15.0)
+        ->and(Transaction::count())->toBe(1)
+        ->and(Movement::count())->toBe(2);
+});
+
 // ---------------------------------------------------------------------------
-// Layer 3 - adjustByReference()
+// adjustByReference
 // ---------------------------------------------------------------------------
 
 it('adjustByReference on non-existent ref behaves as initial add', function () {
